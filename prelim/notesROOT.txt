@@ -1,0 +1,45 @@
+TH1F: T (ROOT), H histogram, 1  dimensione, F float
+
+TH1F ilMioPrimoIstogramma("titolo", "label, 1000, 1, 100); inizializza il mio grafico se scritto su terminale
+ilMioPrimoIstogramma.Draw(); fa il mio grafico
+ilMioPrimoIstogramma.Fill(0.5); inserisce un singolo numero
+
+Trandom ->??
+gRandom, mi fornisce una serie di metodi -> come è che si guardavano?
+gRandom->Uniform( fornisce una serie di numeri casuali distributi uniformente di default da 0 a 1
+
+Ottimizzare il binning nel caso di elementi discreti!
+
+-------------------------------------------------------------------
+TH1F ilMioPrimoIstogramma("titolo", "label, 256, 0, 1); il primo numero indica il numero dei punti, poi c'è start e stop
+
+for (int i=0; i<100000; i++){ilMioPrimoIstogramma.Fill(gRandom->Integer(256)/256.);} inserisce un numero casuale di eventi, ricorda la divisione con un float
+
+ilMioPrimoIstogramma.Setminimum(0)
+
+ilMioPrimoIstogramma.Draw()
+
+ilMioPrimoIstogramma.Draw("e"); inserisce le mie barre di errore
+
+----------------------------------------------------------------------
+
+se voglio richiamare una macro che ho definito con l'estensione cpp (C++)  usare .L
+
+.L ToyMC.cpp
+
+A questo punto posso poi usare una delle funzioni li definite cosi:
+
+toyMontecarlo(100., 1., 10000);
+
+Se faccio tasto destro sul mio grafico e clicco FitPanel trovo il modello statistico che meglio fitta il mio grafico->
+se voglio ripetere il mio grafico più volte mi aspetto che sia una Gaussiana
+
+Mi stamperà su Terminale i valori ei parametri di best fit con relativo errore e in rosso il mio fit sul mio 
+
+Se ciclo su SetOptFit sulla zona dove ho Media e Deviazione standard e digito 111111->
+posso mettere i parametri di best fit+ chi quadro e p-value anche nel riquadro su grafico
+**Ricorda**: l'interfaccia grafica di ROOT mi permette di modificarlo a piacimento come nel caso di MatLab
+
+Mi aspetto che la mia approssimazione gaussiana peggiora più vado a valori medi diminuisci, ovvero quando T è molto piccolo
+
+Per uscire da ROOT scrivere su BASH .q 
