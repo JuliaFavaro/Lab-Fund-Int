@@ -1,24 +1,23 @@
-# Julia Favaro's Project - Computing Methods for Experimental Physics and Data Analysis 2024
+# Julia Favaro's Project - Fundamental Interactions Laboratory 2024-2025
 
-This course was designed by Prof. Andrea Rizzi, Prof. Luca Baldini, and Prof. Gianluca Lamanna for the Master's degree in Physics at the University of Pisa, Italy 
+This course was designed by Prof. Eugenio Paoloni and Prof. Giovanni Punzi for the Master's degree in Physics at the University of Pisa, Italy 
 
 University of Pisa webpage: [https://www.df.unipi.it/](https://www.df.unipi.it/)
 
-Draft and syllabus of this class: [Computing Methods for Experimental Physics and Data Analysis]( https://unipi.coursecatalogue.cineca.it/insegnamenti/2024/52566_686758_76342/2023/52566/10452?coorte=2024&schemaid=8955)
+Draft and syllabus of this class: [Fundamental Interactions Laboratory]( [https://unipi.coursecatalogue.cineca.it/insegnamenti/2024/52566_686758_76342/2023/52566/10452?coorte=2024&schemaid=8955](https://unipi.coursecatalogue.cineca.it/insegnamenti/2024/52567_695825_77808/2023/52567/10452?coorte=2024&schemaid=8951))
 
 ### Repository structure
-    Interazione radiazione-materia, concetti di base, sezioni d'urto, cammino libero medio, cinematica relativistica.
-    Cenni di radioattività e radioprotezione.
-    Perdita di energia per ionizzazione, range, camere a ionizzazione, camere a fili e a deriva, rivelatori a stato solido, spettrometri magnetici.
-    Scintillazione e rivelatori a scintillazione.Fotomoltiplicatori, Silicon Photomultipliers (SiPM(.
-    Effetto Cerenkov e rivelatori che sfruttano tale effetto.
-    Interazioni di fotoni, calorimetria. Concetti base dei rivelatori a microstrip in silicio. Concetti base sui tracciatori.
-    Catena di rivelazione ed acquisizione, elettronica modulare.
+-_Prel_ folder: preliminary lab experience on cosmic ray detection through Scintillators and PMT detectors.
 
-    Rudimenti di Root e C++.
-
-
-### Description of the project
+### Objectives of the course
+- Radiation-matter interaction: basic concepts, cross-sections, mean free path, relativistic kinematics.
+- Introduction to radioactivity and radioprotection.
+- Energy loss by ionization, range, ionization chambers, wire and drift chambers, solid-state detectors, magnetic spectrometers.
+- Scintillation and scintillation detectors. Photomultipliers, Silicon Photomultipliers (SiPM).
+- Cerenkov effect and detectors exploiting this effect.
+- Photon interactions, calorimetry. Basic concepts of silicon microstrip detectors. Basic concepts of trackers.
+- Detection and acquisition chain, modular electronics.
+- Basics of Root and C++.
 
 ### For further information
 
