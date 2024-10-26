@@ -1,14 +1,12 @@
 #include <math.h>
 #include <iostream> //nota bene non come in C!!
 
-/*
-Goal: simulare l'esperienza priliminare:
- Tre rivelatori con efficienze date sovrapposti.
- Riempire l'istogramma delle coincidene doppie, triple.
- Costruire un istogramma dell'efficienza stimata dal rapporto triple/doppie
- */
+/* Goal: simulare l'esperienza priliminare:
+   Tre rivelatori con efficienze date sovrapposti.
+   Riempire l'istogramma delle coincidene doppie, triple.
+   Costruire un istogramma dell'efficienza stimata dal rapporto triple/doppie */
 
-void toyMonteCarlo(double T, double rate, int NExp, double efficienza 1){ // T durate temporale + rate + numero massimo di esperimenti da fare 
+void toyMonteCarlo(double T, double rate, int NExp, double efficienza1 = 0.9, double efficienza2 = 0.8, double efficienza3 = 0.7){
     double t=0.; //scala dei tempi
     int Nevt=0; //numero evento
     int VistoDa1; //conteggi del primo PMT
@@ -24,7 +22,7 @@ void toyMonteCarlo(double T, double rate, int NExp, double efficienza 1){ // T d
             t+=-log(gRandom->Uniform()) / rate;
             Nevt++;
 
-            if (gRandom->Unifor()<efficienza1)
+            if (gRandom->Uniform()<efficienza1)
             VistoDa1++;
             //l'ho visto, altrimenti non l'ho visto
 
