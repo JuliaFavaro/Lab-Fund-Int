@@ -1,12 +1,4 @@
-TH1F: T (ROOT), H histogram, 1  dimensione, F float
 
-TH1F ilMioPrimoIstogramma("titolo", "label, 1000, 1, 100); inizializza il mio grafico se scritto su terminale
-ilMioPrimoIstogramma.Draw(); fa il mio grafico
-ilMioPrimoIstogramma.Fill(0.5); inserisce un singolo numero
-
-Trandom ->??
-gRandom, mi fornisce una serie di metodi -> come è che si guardavano?
-gRandom->Uniform( fornisce una serie di numeri casuali distributi uniformente di default da 0 a 1
 
 Ottimizzare il binning nel caso di elementi discreti!
 
@@ -38,8 +30,5 @@ Mi stamperà su Terminale i valori ei parametri di best fit con relativo errore 
 
 Se ciclo su SetOptFit sulla zona dove ho Media e Deviazione standard e digito 111111->
 posso mettere i parametri di best fit+ chi quadro e p-value anche nel riquadro su grafico
-**Ricorda**: l'interfaccia grafica di ROOT mi permette di modificarlo a piacimento come nel caso di MatLab
-
-Mi aspetto che la mia approssimazione gaussiana peggiora più vado a valori medi diminuisci, ovvero quando T è molto piccolo
 
 Per uscire da ROOT scrivere su BASH .q 
