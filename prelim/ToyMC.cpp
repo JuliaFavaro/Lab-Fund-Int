@@ -8,7 +8,7 @@ Goal: simulare l'esperienza priliminare:
  Costruire un istogramma dell'efficienza stimata dal rapporto triple/doppie
  */
 
-void toyMonteCarlo(double T, double rate, int NExp, douuble efficienza 1){ // T durate temporale + rate + numero massimo di esperimenti da fare 
+void toyMonteCarlo(double T, double rate, int NExp, double efficienza 1){ // T durate temporale + rate + numero massimo di esperimenti da fare 
     double t=0.; //scala dei tempi
     int Nevt=0; //numero evento
     int VistoDa1; //conteggi del primo PMT
