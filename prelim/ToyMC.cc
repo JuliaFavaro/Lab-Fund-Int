@@ -5,78 +5,78 @@
 
 /*
  Usage: .L ToyMC.cc++
- to simulate the first 100 pulses of the system:
- ToyMC(100) 
+ to simulate the first 100 pulses of the system: ToyMC(100) 
  */
  
 struct Event{
   /* This structure describes the "atomic" event */
   
+  //attributes of this class
   vector<unsigned int> fired_pmts; // set of indices of the fired pmts
   double t; // time of the event
-  enum event_type { accidental=0, cosmic=1}; 
+  enum event_type { accidental=0, cosmic=1}; //a set of named integral constants
   event_type type;
   
 };
 
-template< unsigned int N> // N number of PMTs
-struct Status{
-
+template< unsigned int N> // N number of PMTs, constant global 
+struct Status{ //class
   /* This structure describes the near future evolution of the system */
   
   double t_next_accidentals[N]; // vector of times of the next accidental of each PMT
   double t_next_cosmic;         // time of the next cosmic event
-  double accidental_rates[N];   // vector of the accidental rate 
+  double accidental_rates[N];   // vector of the accidental rate  for each PMT
   double cosmic_rate;           // rate of the cosmic rays
   double t_next_event;          // time of the next event
 
-
-  // constructor
+  // constructor to crean an istance of this class
   Status( const vector<float> & rates, double cosmicRate){
-    if( rates.size() != N)
+    if( rates.size() != N) //sanity check
       throw;
     
     for(unsigned int i =0; i< N; i++){
-      accidental_rates[i] = rates [i];
+      accidental_rates[i] = rates[i];
       t_next_accidentals[i] = -log( gRandom->Uniform()) / rates[i];
     }
 
     cosmic_rate = cosmicRate;
     t_next_cosmic = -log( gRandom->Uniform() ) / cosmic_rate ;
-
     t_next_event = -1.;
-
   }
 
-  
-  Event next_event() // return the next event, and updates the near future state
-  {
-    
+  //inheritance of the Event class
+  Event next_event(){ // return the next event, and updates the near future state
     t_next_event = t_next_accidentals[0];
-    Event::event_type next_event_type = Event::event_type::accidental;
-    
+    Event::event_type next_event_type = Event::event_type::accidental; //Initially assumes the next event type is accidental
     unsigned int firing_pmt = 0; 
 
-    for( unsigned int i = 1; i< N ; i++ )
-      if( t_next_accidentals[i] < t_next_event ){
+    for(unsigned int i = 1; i< N ; i++ )
+      if( t_next_accidentals[i] < t_next_event ){ 
+      /*If any PMT has an accidental event time sooner than the current t_next_event, 
+      it updates t_next_event and sets firing_pmt to the index of that PMT.*/
         t_next_event = t_next_accidentals[i];
         firing_pmt =i ;
       }
 
-    if( t_next_cosmic < t_next_event ){
-      t_next_event = t_next_cosmic;
-      next_event_type = Event::event_type::cosmic;
-      firing_pmt = N;
-    }
+      if( t_next_cosmic < t_next_event ){
+        t_next_event = t_next_cosmic;
+        next_event_type = Event::event_type::cosmic; //change assumption
+        firing_pmt = N;//you can choose any, all of them have seen it
+      }
 
-    Event the_event;
+    Event the_event;  //istance definition
     the_event.t = t_next_event;
+
     if ( next_event_type == Event::event_type::accidental ){
+    /*Adds the firing_pmt to the list of fired_pmts.
+    Updates t_next_accidentals for the PMT that fired to schedule the next accidental event.*/
       the_event.fired_pmts.push_back(firing_pmt);
       t_next_accidentals[ firing_pmt] += -log( gRandom->Uniform()) / accidental_rates[firing_pmt];
     }
 
     if( next_event_type == Event::event_type::cosmic ){
+    /*Adds all PMTs to fired_pmts because a cosmic event affects all PMTs.
+    Updates t_next_cosmic to schedule the next cosmic event.*/
       for(unsigned int i=0 ; i<N ;i++ )
 	      the_event.fired_pmts.push_back(i);
       t_next_cosmic += -log( gRandom->Uniform() ) / cosmic_rate ;
