@@ -7,8 +7,7 @@ void toyMonteCarlo(double T, double rate, int NExp, double efficienza1 = 0.9, do
     
     /* Goal: simulare l'esperienza priliminare:
     Tre rivelatori con efficienze date sovrapposti: istogrammi dei conteggi singoli.
-    Riempire l'istogramma delle coincidenze doppie e triple.
-    Contare i conteggi accidentali.
+    Riempire l'istogramma delle coincidenze doppie e triple. (no accidentali per ora)
     Costruire un istogramma dell'efficienza stimata dal rapporto triple/doppie */
 
     double t = 0.; // Time scale

@@ -2,7 +2,8 @@
 #include <vector>
 #include <math.h>
 #include <iostream>
-
+#include <TH1.h> 
+#include <TCanvas.h>
 /*
  Usage: .L ToyMC.cc++
  to simulate the first 100 pulses of the system: ToyMC(100) 
@@ -178,8 +179,16 @@ void ToyMC(unsigned int n_evt){
   double cosmic = 1;
 
   Status<3> status( rate, cosmic);
-  EfficiencyKill<3> efficiency_killer( {.9, .09, .9} );
-    
+  EfficiencyKill<3> efficiency_killer( {.2, .09, .2} );
+  
+  // Create histograms
+  TH1F* h_accidental[3];
+  TH1F* h_cosmic[3];
+  for (int i = 0; i < 3; i++) {
+      h_accidental[i] = new TH1F(Form("h_accidental_%d", i), Form("Accidental Events - PMT %d", i), 100, 0, 1000);
+      h_cosmic[i] = new TH1F(Form("h_cosmic_%d", i), Form("Cosmic Events - PMT %d", i), 100, 0, 1000);
+  }
+
   vector<Discriminator> discriminators;
   discriminators = { Discriminator(50e-9), Discriminator(50e-9), Discriminator(50e-9)};
 
@@ -196,3 +205,56 @@ void ToyMC(unsigned int n_evt){
 	}
 
 }
+
+
+void ToyMC(unsigned int n_evt){
+    vector<float> rate = {10, 10, 10};
+    double cosmic = 1;
+
+    Status<3> status(rate, cosmic);
+    EfficiencyKill<3> efficiency_killer({.2, .09, .2});
+
+
+    unsigned int NeventsPMT1 = 0, NeventsPMT2 = 0, NeventsPMT3 = 0, NaccidentalPMT12 = 0;
+
+    for (unsigned int i = 0; i < n_evt; i++) {
+        Event evt = efficiency_killer.kill(status.next_event());
+
+        cout << evt.t << "\t" << (evt.type == Event::event_type::cosmic ? "cosmic" : "acc") << "\t | ";
+        
+        for (auto pmt = evt.fired_pmts.begin(); pmt < evt.fired_pmts.end(); pmt++) {
+            cout << *pmt << " |";
+            if (evt.type == Event::event_type::cosmic) {
+                h_cosmic[*pmt]->Fill(evt.t);
+                if (*pmt == 0 || *pmt == 1) NaccidentalPMT12++;
+            } else {
+                h_accidental[*pmt]->Fill(evt.t);
+            }
+
+            if (*pmt == 0) NeventsPMT1++;
+            if (*pmt == 1) NeventsPMT2++;
+            if (*pmt == 2) NeventsPMT3++;
+        }
+        cout << endl;
+    }
+
+    // Calculate efficiency for PMT 2
+    double efficiency_PMT2 = static_cast<double>(NeventsPMT3) / (NeventsPMT1 + NeventsPMT2 - NaccidentalPMT12);
+    cout << "Efficiency of PMT 2: " << efficiency_PMT2 << endl;
+
+    // Draw histograms
+    TCanvas* c1 = new TCanvas("c1", "Event Histograms", 1200, 800);
+    c1->Divide(3, 2);
+    
+    for (int i = 0; i < 3; i++) {
+        c1->cd(i+1);
+        h_accidental[i]->SetLineColor(kRed);
+        h_accidental[i]->Draw();
+        
+        c1->cd(i+4);
+        h_cosmic[i]->SetLineColor(kBlue);
+        h_cosmic[i]->Draw();
+    }
+    c1->Update();
+}
+
