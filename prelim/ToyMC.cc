@@ -186,7 +186,6 @@ void ToyMC(unsigned int n_evt){
   for( unsigned int i =0; i< n_evt ; i++){
     double t[3];
     Event evt = efficiency_killer.kill( status.next_event() );      
-
     cout << evt.t << "\t" << (evt.type == Event::event_type::cosmic ? "cosmic" : " acc  ") << "\t | " ;
 
     for ( auto pmt = evt.fired_pmts.begin() ; pmt < evt.fired_pmts.end(); pmt++ )
