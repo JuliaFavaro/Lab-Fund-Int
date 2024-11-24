@@ -26,7 +26,11 @@ Each folder contains a README file that goes through all the code files and resu
 
 ### For further information
 
-#### Dependencies 
+#### Installation and usage
+Some of the code was developed using the C++ language and the ROOT library. My partner Arianna and I obtained the datasets during our lab lectures. Documentation is embedded in the code. 
+
+Some useful information on how to install ROOT:[ROOT on WSL](https://root-forum.cern.ch/t/complete-root-installation-instructions-for-wsl-ubuntu-18-04-on-windows-10/35148/3), [ROOT official installation page](https://root.cern/install/)
+
 
 ### Authors and acknowledgment
 Julia Favaro's bio: I'm a master's student from the University of Pisa (Italy). I am currently pursuing a career in high energy astrophysics and data analysis.
