@@ -1,6 +1,6 @@
 # Julia Favaro's Project - Fundamental Interactions Laboratory 2024-2025
 
-##Preliminary lab experience: cosmic ray detection through Scintillators and PMT detectors.
+## Preliminary lab experience: cosmic ray detection through Scintillators and PMT detectors.
 
 ### Folder organization:
 - _Efficienza.py_: Python code that was used to create the graphs in the _Pictures_ folder,
