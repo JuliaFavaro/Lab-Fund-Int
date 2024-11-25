@@ -174,14 +174,6 @@ public:
   Discriminator discriminators[N];
 };
 
-Double_t binomial(Double_t *x, Double_t *par) {
-    Double_t k = x[0];    // Numero di successi
-    Double_t n=1000;  // Numero di prove
-    Double_t p = par[0];  // Probabilità di successo
-    Double_t binomial_coefficient = TMath::Binomial(n, k);
-    Double_t probability = binomial_coefficient * pow(p, k) * pow(1 - p, n - k);
-    return probability;
-}
 
 void ToyMC(unsigned int NExp) {
     std::vector<float> rate = {10, 10, 10};
@@ -293,15 +285,8 @@ void ToyMC(unsigned int NExp) {
     double mean_efficiency = efficiency_histo->GetStd();
     double initial_efficiency = 0.9; // Efficienza iniziale fornita nel codice
     double percent_distance = fabs(mean_efficiency - initial_efficiency) / initial_efficiency * 100;
-
-    // Definizione della funzione binomiale
-    TF1 *binomFit = new TF1("binomFit", binomial, 0, 1, 1);
-    binomFit->SetParameters(0.9);  // Inizializzazione dei parametri: n = 1000, p = 0.9
-    //efficiency_histo->Fit("binomFit");
-
     // Aggiungere testo alla canvas
     c1->cd();
-    binomFit->Draw("same");
     TPaveText *pt = new TPaveText(0.1, 0.8, 0.3, 0.9, "NDC");
     pt->AddText(Form("Percent Distance: %.2f%%", percent_distance));
     pt->Draw();

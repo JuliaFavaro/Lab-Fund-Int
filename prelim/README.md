@@ -7,7 +7,7 @@
 - _notesROOT.txt_: a couple of notes taken during Paoloni's lecture on ROOT
 - _EfficiencyEstimation.cpp_: ToyMonteCarlo that calculates the PMT efficiency as simply as the rate of triple coincidences over the double coincidences. Does not consider accidental counts.
 - _ToyMC.cpp_: ToyMontecarlo that replicates the sequence of accidental and cosmic events. Defines also the function of discriminators in our simulated experimental setup. This code was implemented by Prof. Paoloni.
-- _NewTry.cpp_: Final version of ToyMontecarlo that implements the accidental over cosmic events simulation and coincidence time on discrminated signals.
+- _EfficiencyEstimationUpgrade.cpp_: Final version of ToyMontecarlo that implements the accidental over cosmic events simulation and coincidence time on discrminated signals.
 
 ### Objectives of the experience
 - 
