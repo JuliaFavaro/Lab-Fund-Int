@@ -3,10 +3,11 @@
 ## Preliminary lab experience: cosmic ray detection through Scintillators and PMT detectors.
 
 ### Folder organization:
-- _Efficienza.py_: Python code that was used to create the graphs in the _Pictures_ folder,
+- _Efficienza.py_: Python code used to create the graphs in the _Pictures_ folder: Trigger frequency dependency on the voltage and Efficiency of each of the PMTs on the alimentation voltage.
 - _notesROOT.txt_: a couple of notes taken during Paoloni's lecture on ROOT
-- _ToyMC_: the first example of a ToyMontecarlo to replicate this experience. I  
-- _
+- _EfficiencyEstimation.cpp_: ToyMonteCarlo that calculates the PMT efficiency as simply as the rate of triple coincidences over the double coincidences. Does not consider accidental counts.
+- _ToyMC.cpp_: ToyMontecarlo that replicates the sequence of accidental and cosmic events. Defines also the function of discriminators in our simulated experimental setup. This code was implemented by Prof. Paoloni.
+- _NewTry.cpp_: Final version of ToyMontecarlo that implements the accidental over cosmic events simulation and coincidence time on discrminated signals.
 
 ### Objectives of the experience
 - 
