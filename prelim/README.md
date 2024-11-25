@@ -10,8 +10,10 @@
 - _EfficiencyEstimationUpgrade.cpp_: Final version of ToyMontecarlo that implements the accidental over cosmic events simulation and coincidence time on discrminated signals.
 
 ### Objectives of the experience
-- 
-
+- The purpose of this experience was to familiarize ourselves with the experimental apparatus for the detection and counting of cosmic rays.
+- We will illustrate the output behavior of the PMTs as the supply voltages vary, the main characteristics of their discriminated signals, and their counts.
+- We will present the coincidence apparatus and the counts for each pair of photomultipliers. We will estimate the efficiency of our PMTs, taking into account triple counts and accidental doubles that do not correspond to the arrival of a real cosmic ray.
+  
 #### Installation and usage
 Some of the code was developed using the C++ language and the ROOT library. My partner Arianna and I obtained the datasets during our lab lectures. Documentation is embedded in the code. 
 
