@@ -3,10 +3,7 @@
 ## Extensive cosmic ray showers study
 
 ### Folder organization:
-- _Efficienza.py_: Python code that was used to create the graphs in the _Pictures_ folder,
-- _notesROOT.txt_: a couple of notes taken during Paoloni's lecture on ROOT
-- _ToyMC_: the first example of a ToyMontecarlo to replicate this experience. I  
-- _
+- _Efficiency_Setup08.cpp_ : Test C++ code to calculate the efficiency of each Setup.
 
 ### Objectives of the experience
 1. Verify the existence of possible temporal correlations between the arrivals of cosmic rays at successive times.
@@ -32,4 +29,4 @@ For more explanation or any suggestions, write me at j.favaro@studenti.unipi.it 
 GNU General Public License v3.0 or later
 
 ### Project status
-On progress
+In progress

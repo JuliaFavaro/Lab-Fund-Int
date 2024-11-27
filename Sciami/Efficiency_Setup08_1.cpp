@@ -6,7 +6,7 @@
 #include <TGraphErrors.h>
 #include <TMath.h>
 
-void calibration() {
+void calibration0() {
     // Length of the arrays for efficiency estimation
     static const int n1 = 8;
 	static const int n2=10;
@@ -34,21 +34,10 @@ void calibration() {
 	double eff3_acc[n3];
 
     // Declaring canvas
-    TCanvas* c1 = new TCanvas("c1", "Single counts", 1000, 1000);
-	TCanvas* c2 = new TCanvas("c2", "Single counts", 1000, 1000);
-	TCanvas* c3 = new TCanvas("c3", "Single counts", 1000, 1000);
-
+    TCanvas* c1 = new TCanvas("c1", "Setup08", 1500, 1500);
+    c1->SetTitle("Setup08");
 	c1->SetGrid(); 
-	c2->SetGrid();
-	c3->SetGrid(); 
-	
-	TCanvas* e1 = new TCanvas("e1", "Efficiency with Accidental Corrections", 1000, 1000);
-	TCanvas* e2 = new TCanvas("e2", "Efficiency with Accidental Corrections", 1000, 1000);
-	TCanvas* e3 = new TCanvas("e3", "Efficiency with Accidental Corrections", 1000, 1000);
-
-	e1->SetGrid(); 
-	e2->SetGrid();
-	e3->SetGrid(); 
+    c1->Divide(2, 3); //colonne, righe
 	
     // Graph with error bars
     TGraphErrors* Epsilon1_acc = new TGraphErrors(n1);
@@ -71,82 +60,82 @@ void calibration() {
     double w = 40e-9; //soglia: -30.4 mV
     double w_min = 2e-9;
     double acc23 = time * (150) * (140) * ((2 * w) - (2 * w_min));
+    std::cout << "Accidentali 23 " << acc23 << std::endl;
     double acc13 = time * (103) * (140) * ((2 * w) - (2 * w_min));
+    std::cout << "Accidentali 13 " << acc13 << std::endl;
     double acc12 = time * (103) * (150) * ((2 * w) - (2 * w_min));
+    std::cout << "Accidentali 12 " << acc12 << std::endl;
 	double acc123= time * (103) * (acc23/30) *((2*w)-(2*w_min));
+    std::cout << "Accidentali 123 " << acc123 << std::endl;
 
     for (int k = 0; k < n1; k++) {
         eff1_acc[k] = counts123_e1[k] / (counts23[k] - acc23-acc123);
         Epsilon1_acc->SetPoint(k, voltage1[k], eff1_acc[k]);
-        Epsilon1_acc->SetPointError(k, 0, sqrt((eff1_acc[k] * (1 - eff1_acc[k])) / counts23[k]));
+        Epsilon1_acc->SetPointError(k, 0, sqrt((eff1_acc[k] * (1 - eff1_acc[k])) / counts23[k]));//binomial error if we overlook the accidental counts
 		Counts2Graph1->SetPoint(k, voltage1[k], counts1[k] / time);
 	  	Counts2Graph1->SetPointError(k, 0, sqrt(counts1[k]) / time); // Poissonian error 
     }
+std::cout << voltage1[6] << " Singola " << counts1[6] / time << " " << sqrt(counts1[6]) / time << " Efficienza " << eff1_acc[6] << " " << sqrt((eff1_acc[6] * (1 - eff1_acc[6])) / counts23[6]) << std::endl;
 
     for (int k = 0; k < n2; k++) {
         eff2_acc[k] = counts123_e2[k] / (counts13[k] - acc13-acc123);
         Epsilon2_acc->SetPoint(k, voltage2[k], eff2_acc[k]);
-        Epsilon2_acc->SetPointError(k, 0, sqrt((eff2_acc[k] * (1 - eff2_acc[k])) / counts13[k]));
+        Epsilon2_acc->SetPointError(k, 0, sqrt((eff2_acc[k] * (1 - eff2_acc[k])) / counts13[k]));//binomial error if we overlook the accidental counts
 		Counts2Graph2->SetPoint(k, voltage2[k], counts2[k] / time);
 	  	Counts2Graph2->SetPointError(k, 0, sqrt(counts2[k]) / time); // Poissonian error 
     }
+std::cout << voltage2[7] << " Singola " << counts2[7] / time << " " << sqrt(counts2[7]) / time << " Efficienza " << eff2_acc[7] << " " << sqrt((eff2_acc[7] * (1 - eff2_acc[7])) / counts13[7]) << std::endl;
 
 	for (int k = 0; k < n3; k++) {
         eff3_acc[k] = counts123_e3[k] / (counts12[k] - acc12-acc123);
         Epsilon3_acc->SetPoint(k, voltage3[k], eff3_acc[k]);
-        Epsilon3_acc->SetPointError(k, 0, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));
+        Epsilon3_acc->SetPointError(k, 0, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));//binomial error if we overlook the accidental counts
 		Counts2Graph3->SetPoint(k, voltage3[k], counts3[k] / time);
 	  	Counts2Graph3->SetPointError(k, 0, sqrt(counts3[k]) / time); // Poissonian error 
     }
 
+std::cout << voltage3[5] << " Singola " << counts3[5] / time << " " << sqrt(counts3[5]) / time << " Efficienza " << eff3_acc[5] << " " << sqrt((eff3_acc[5] * (1 - eff3_acc[5])) / counts12[5]) << std::endl;
 	 // Plotting single counts
-    c1->cd();
+    c1->cd(1);
     Counts2Graph1->SetMarkerStyle(8);
-    Counts2Graph1->SetMarkerSize(0.8);
+    Counts2Graph1->SetMarkerSize(1);
     Counts2Graph1->SetMarkerColor(kAzure -9);
     Counts2Graph1->SetLineColor(kAzure -9);
     Counts2Graph1->Draw("AP");
-    c1->Update();
 
-    c2->cd();
+    c1->cd(3);
     Counts2Graph2->SetMarkerStyle(8);
-    Counts2Graph2->SetMarkerSize(0.8);
+    Counts2Graph2->SetMarkerSize(1);
     Counts2Graph2->SetMarkerColor(kPink +2);
     Counts2Graph2->SetLineColor(kPink +2);
     Counts2Graph2->Draw("AP");
-    c2->Update();
 
-	c3->cd();
+	c1->cd(5);
     Counts2Graph3->SetMarkerStyle(8);
-    Counts2Graph3->SetMarkerSize(0.8);
+    Counts2Graph3->SetMarkerSize(1);
     Counts2Graph3->SetMarkerColor(kSpring +3);
     Counts2Graph3->SetLineColor(kSpring +3);
     Counts2Graph3->Draw("AP");
-    c3->Update();
 
     // Plotting efficiency with accidental corrections
-    e1->cd();
+    c1->cd(2);
     Epsilon1_acc->SetMarkerStyle(8);
-    Epsilon1_acc->SetMarkerSize(0.8);
+    Epsilon1_acc->SetMarkerSize(1);
     Epsilon1_acc->SetMarkerColor(kAzure -9);
     Epsilon1_acc->SetLineColor(kAzure -9);
     Epsilon1_acc->Draw("AP");
-	e1->Update();
 
-	e2->cd();
+	c1->cd(4);
     Epsilon2_acc->SetMarkerStyle(8);
-    Epsilon2_acc->SetMarkerSize(0.8);
+    Epsilon2_acc->SetMarkerSize(1);
     Epsilon2_acc->SetMarkerColor(kPink+2);
     Epsilon2_acc->SetLineColor(kPink+2);
     Epsilon2_acc->Draw("AP");
-    e2->Update();
 
-	e3->cd();
+	c1->cd(6);
     Epsilon3_acc->SetMarkerStyle(8);
-    Epsilon3_acc->SetMarkerSize(0.8);
+    Epsilon3_acc->SetMarkerSize(1);
     Epsilon3_acc->SetMarkerColor(kSpring +3);
     Epsilon3_acc->SetLineColor(kSpring +3);
     Epsilon3_acc->Draw("AP");
-    e3->Update();
 }
-
