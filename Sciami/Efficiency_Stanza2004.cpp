@@ -8,9 +8,9 @@
 
 void calibration04() {
     // Length of the arrays for efficiency estimation
-    static const int n1 =14;
-	static const int n2=12;
-	static const int n3= 13;
+    static const int n1 =14; //V2=1780, V3=1750
+	static const int n2=12; //V1=1800, V3=1750
+	static const int n3= 13; //V1=1800, V2=1780
     static const int time = 30;// Time passed in seconds
     static const int time2=10; 
 
@@ -33,7 +33,6 @@ void calibration04() {
     double eff1_acc[n1];
 	double eff2_acc[n2];
 	double eff3_acc[n3];
-e no 
    
     // Declaring canvas
     TCanvas* c1 = new TCanvas("c1", "Stanza2004", 1500, 1500);
@@ -142,66 +141,5 @@ std::cout << voltage3[5] << " Singola " << counts3[5] / time2 << " " << sqrt(cou
     Epsilon3_acc->SetMarkerColor(kSpring +3);
     Epsilon3_acc->SetLineColor(kSpring +3);
     Epsilon3_acc->Draw("AP");
-
-    // Dichiarazione di un nuovo canvas per efficienza vs conteggi singoli
-TCanvas* c2 = new TCanvas("c2", "Efficiency vs Single Counts", 1500, 1500);
-c2->SetTitle("Efficiency vs Single Counts");
-c2->SetGrid(); 
-
-// Nuovi TGraphErrors per efficienza vs conteggi singoli
-TGraphErrors* EffVsCounts1 = new TGraphErrors(n1);
-TGraphErrors* EffVsCounts2 = new TGraphErrors(n2);
-TGraphErrors* EffVsCounts3 = new TGraphErrors(n3);
-
-// Popolazione dei nuovi TGraphErrors
-for (int k = 0; k < n1; k++) {
-    EffVsCounts1->SetPoint(k, counts1[k] / time, eff1_acc[k]);
-    EffVsCounts1->SetPointError(k, sqrt(counts1[k]) / time, sqrt((eff1_acc[k] * (1 - eff1_acc[k])) / counts23[k]));
-}
-
-for (int k = 0; k < n2; k++) {
-    EffVsCounts2->SetPoint(k, counts2[k] / time, eff2_acc[k]);
-    EffVsCounts2->SetPointError(k, sqrt(counts2[k]) / time2, sqrt((eff2_acc[k] * (1 - eff2_acc[k])) / counts13[k]));
-}
-
-for (int k = 0; k < n3; k++) {
-    EffVsCounts3->SetPoint(k, counts3[k] / time, eff3_acc[k]);
-    EffVsCounts3->SetPointError(k, sqrt(counts3[k]) / time2, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));
-}
-
-// Impostazioni grafiche per EffVsCounts1
-EffVsCounts1->SetTitle("Efficiency vs Single Counts PMT1; Single Counts (cps); Efficiency");
-EffVsCounts1->SetMarkerStyle(8);
-EffVsCounts1->SetMarkerSize(1);
-EffVsCounts1->SetMarkerColor(kAzure -9);
-EffVsCounts1->SetLineColor(kAzure -9);
-
-// Impostazioni grafiche per EffVsCounts2
-EffVsCounts2->SetTitle("Efficiency vs Single Counts PMT2; Single Counts (cps); Efficiency");
-EffVsCounts2->SetMarkerStyle(8);
-EffVsCounts2->SetMarkerSize(1);
-EffVsCounts2->SetMarkerColor(kPink +2);
-EffVsCounts2->SetLineColor(kPink +2);
-
-// Impostazioni grafiche per EffVsCounts3
-EffVsCounts3->SetTitle("Efficiency vs Single Counts PMT3; Single Counts (cps); Efficiency");
-EffVsCounts3->SetMarkerStyle(8);
-EffVsCounts3->SetMarkerSize(1);
-EffVsCounts3->SetMarkerColor(kSpring +3);
-EffVsCounts3->SetLineColor(kSpring +3);
-
-// Aggiungere grafici al canvas
-c2->cd();
-EffVsCounts1->Draw("AP");
-EffVsCounts2->Draw("P same");
-EffVsCounts3->Draw("P same");
-
-// Aggiungere legenda
-TLegend* legend = new TLegend(0.1,0.7,0.3,0.9);
-legend->AddEntry(EffVsCounts1, "PMT1", "P");
-legend->AddEntry(EffVsCounts2, "PMT2", "P");
-legend->AddEntry(EffVsCounts3, "PMT3", "P");
-legend->Draw();
-
 }
 

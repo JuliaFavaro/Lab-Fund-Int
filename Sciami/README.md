@@ -3,7 +3,9 @@
 ## Extensive cosmic ray showers study
 
 ### Folder organization:
-- _Efficiency_Setup08.cpp_ : Test C++ code to calculate the efficiency of each Setup.
+- _Efficiency_Setup08.cpp_, _Efficiency_Setup06.cpp_, Efficiency_Stanza2004.cpp_ : C++ code to calculate the efficiency and single counts for each PMT in each Setup for different Alimentation voltage.
+- _Flux_calculations.py_ : Python code to estimate the cosmic flux in 10s for each setup and to estimate the geometrical acceptance of each setup.
+- _De0Nano.cpp_ : Code to read the data coming from the De0Nano FPGA acqusition of data.  
 
 ### Objectives of the experience
 1. Verify the existence of possible temporal correlations between the arrivals of cosmic rays at successive times.
