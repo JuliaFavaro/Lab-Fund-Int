@@ -8,26 +8,26 @@
 
 void calibration06() {
     // Length of the arrays for efficiency estimation
-    static const int n1 =14;
-	static const int n2=12;
-	static const int n3= 13;
+
+    static const int n1 =12; //V2=1770 V, V3=1700 V
+	static const int n2=8; //v1=1620 V, V3=1700 V
+	static const int n3= 14; //V1=1620 V, V2=1770 V
     static const int time = 10;// Time passed in seconds 
+    double voltage1[n1] = {1500, 1520, 1540, 1560, 1580, 1600, 1620, 1640, 1660, 1680, 1700, 1730};
+	double voltage2[n2]={1640,1660, 1680, 1700, 1720, 1740, 1770, 1790, };
+	double voltage3[n3]={1500, 1520, 1540, 1560, 1580,1600, 1620, 1640, 1660, 1680, 1700, 1720, 1740, 1760, };
 
-    double voltage1[n1] = {1730, 1750, 1770, 1780, 1790, 1800, 1830, 1850, 1880, 1900, 1930, 1970, 1990, 2000};
-	double voltage2[n2]={1700, 1730, 1750, 1780, 1790, 1800, 1830, 1870, 1900, 1930, 1980, 2000};
-	double voltage3[n3]={1700, 1730, 1750, 1770, 1800, 1830, 1850, 1870, 1900, 1930, 1950, 1970, 2000};
+    double counts1[n1] ={511, 655,1014, 1604, 2116,2503, 2631, 2975, 2969, 4180, 6876, 18389};
+	double counts2[n2]={365, 653,1005, 1181, 1825, 2850, 5017, 8096 };
+	double counts3[n3]={516, 521, 634, 685,917, 1170, 1645,1704,2761,3116,3666, 5731, 4697, 8118,  };
 
-    double counts1[n1] = {1687, 2194, 3010, 3463, 3991, 4617, 9590, 14213, 20311, 22637, 25229, 27779, 29361, 29713};
-	double counts2[n2]={736, 1202, 1612, 1958, 2318, 2642, 6327, 20561, 31550, 38323, 45400, 46389};
-	double counts3[n3]={723, 1140, 1466, 2922, 8182, 13497, 17276, 19703, 22478, 24964, 27007, 27971, 28760};
+    double counts23[n1] = {35, 34,30, 35, 38, 32,22, 24, 33,23,24, 33};
+	double counts13[n2]={83, 85, 84,77, 72, 89,94, 69};
+	double counts12[n3]={15,28,25, 22, 23, 18, 23, 23, 20,32,22,20,21, 24};
 
-    double counts23[n1] = {541, 521, 484,498,  543, 517, 470, 502, 480, 525, 517, 661, 633, 629};
-	double counts13[n2]={111, 96, 113, 102, 107, 99, 115, 118, 116, 121, 102, 109};
-	double counts12[n3]={200, 148, 171, 159, 175, 180, 198, 151, 183, 173, 170, 200, 182};
-
-    double counts123_e1[n1] = {225, 250, 252, 264, 300, 289, 275, 318, 287, 313, 312, 395, 331, 340};
-	double counts123_e2[n2]={62, 71, 93, 94, 99, 91, 109, 113, 113, 118, 99, 104};
-	double counts123_e3[n3]={102, 86, 92, 95, 98, 96, 120, 77, 108, 105, 100, 113, 104};
+    double counts123_e1[n1] = {24,23, 21, 26, 28,24, 16,18, 21,12, 17,24};
+	double counts123_e2[n2]={12,13, 15, 11, 16, 31, 35,25  };
+	double counts123_e3[n3]={13,23, 18, 16, 15,14, 16, 15, 6, 23,15,12,15, 17};
 
     double eff1_acc[n1];
 	double eff2_acc[n2];
@@ -86,7 +86,7 @@ std::cout << voltage1[7] << " Singola " << counts1[7] / time << " " << sqrt(coun
 	  	Counts2Graph2->SetPointError(k, 0, sqrt(counts2[k]) / time); // Poissonian error 
     }
 
-std::cout << voltage2[7] << " Singola " << counts2[7] / time2 << " " << sqrt(counts2[7]) / time2 << " Efficienza " << eff2_acc[7] << " " << sqrt((eff2_acc[7] * (1 - eff2_acc[7])) / counts13[7]) << std::endl;
+std::cout << voltage2[7] << " Singola " << counts2[7] / time << " " << sqrt(counts2[7]) / time << " Efficienza " << eff2_acc[7] << " " << sqrt((eff2_acc[7] * (1 - eff2_acc[7])) / counts13[7]) << std::endl;
 
 	for (int k = 0; k < n3; k++) {
         eff3_acc[k] = counts123_e3[k] / (counts12[k] - acc12-acc123);
@@ -95,7 +95,7 @@ std::cout << voltage2[7] << " Singola " << counts2[7] / time2 << " " << sqrt(cou
 		Counts2Graph3->SetPoint(k, voltage3[k], counts3[k] / time);
 	  	Counts2Graph3->SetPointError(k, 0, sqrt(counts3[k]) / time); // Poissonian error 
     }
-std::cout << voltage3[5] << " Singola " << counts3[5] / time2 << " " << sqrt(counts3[5]) / time2 << " Efficienza " << eff3_acc[5] << " " << sqrt((eff3_acc[5] * (1 - eff3_acc[5])) / counts12[5]) << std::endl;
+std::cout << voltage3[5] << " Singola " << counts3[5] / time << " " << sqrt(counts3[5]) / time << " Efficienza " << eff3_acc[5] << " " << sqrt((eff3_acc[5] * (1 - eff3_acc[5])) / counts12[5]) << std::endl;
 
 	 // Plotting single counts
     c1->cd(1);
@@ -140,65 +140,5 @@ std::cout << voltage3[5] << " Singola " << counts3[5] / time2 << " " << sqrt(cou
     Epsilon3_acc->SetMarkerColor(kSpring +3);
     Epsilon3_acc->SetLineColor(kSpring +3);
     Epsilon3_acc->Draw("AP");
-
-    // Dichiarazione di un nuovo canvas per efficienza vs conteggi singoli
-TCanvas* c2 = new TCanvas("c2", "Efficiency vs Single Counts", 1500, 1500);
-c2->SetTitle("Efficiency vs Single Counts");
-c2->SetGrid(); 
-
-// Nuovi TGraphErrors per efficienza vs conteggi singoli
-TGraphErrors* EffVsCounts1 = new TGraphErrors(n1);
-TGraphErrors* EffVsCounts2 = new TGraphErrors(n2);
-TGraphErrors* EffVsCounts3 = new TGraphErrors(n3);
-
-// Popolazione dei nuovi TGraphErrors
-for (int k = 0; k < n1; k++) {
-    EffVsCounts1->SetPoint(k, counts1[k] / time, eff1_acc[k]);
-    EffVsCounts1->SetPointError(k, sqrt(counts1[k]) / time, sqrt((eff1_acc[k] * (1 - eff1_acc[k])) / counts23[k]));
-}
-
-for (int k = 0; k < n2; k++) {
-    EffVsCounts2->SetPoint(k, counts2[k] / time, eff2_acc[k]);
-    EffVsCounts2->SetPointError(k, sqrt(counts2[k]) / time2, sqrt((eff2_acc[k] * (1 - eff2_acc[k])) / counts13[k]));
-}
-
-for (int k = 0; k < n3; k++) {
-    EffVsCounts3->SetPoint(k, counts3[k] / time, eff3_acc[k]);
-    EffVsCounts3->SetPointError(k, sqrt(counts3[k]) / time2, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));
-}
-
-// Impostazioni grafiche per EffVsCounts1
-EffVsCounts1->SetTitle("Efficiency vs Single Counts PMT1; Single Counts (cps); Efficiency");
-EffVsCounts1->SetMarkerStyle(8);
-EffVsCounts1->SetMarkerSize(1);
-EffVsCounts1->SetMarkerColor(kAzure -9);
-EffVsCounts1->SetLineColor(kAzure -9);
-
-// Impostazioni grafiche per EffVsCounts2
-EffVsCounts2->SetTitle("Efficiency vs Single Counts PMT2; Single Counts (cps); Efficiency");
-EffVsCounts2->SetMarkerStyle(8);
-EffVsCounts2->SetMarkerSize(1);
-EffVsCounts2->SetMarkerColor(kPink +2);
-EffVsCounts2->SetLineColor(kPink +2);
-
-// Impostazioni grafiche per EffVsCounts3
-EffVsCounts3->SetTitle("Efficiency vs Single Counts PMT3; Single Counts (cps); Efficiency");
-EffVsCounts3->SetMarkerStyle(8);
-EffVsCounts3->SetMarkerSize(1);
-EffVsCounts3->SetMarkerColor(kSpring +3);
-EffVsCounts3->SetLineColor(kSpring +3);
-
-// Aggiungere grafici al canvas
-c2->cd();
-EffVsCounts1->Draw("AP");
-EffVsCounts2->Draw("P same");
-EffVsCounts3->Draw("P same");
-
-// Aggiungere legenda
-TLegend* legend = new TLegend(0.1,0.7,0.3,0.9);
-legend->AddEntry(EffVsCounts1, "PMT1", "P");
-legend->AddEntry(EffVsCounts2, "PMT2", "P");
-legend->AddEntry(EffVsCounts3, "PMT3", "P");
-legend->Draw();
 
 }
