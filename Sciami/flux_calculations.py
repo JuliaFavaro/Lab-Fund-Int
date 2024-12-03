@@ -279,6 +279,3 @@ print(f"Eventi doppie {event_doppie},  rate Setup06: {epsilon*rate_cosmic3}")
 
 # Coincidenze tra questi due telescopi??
 #Va valutato Dtcoinc dalla scheda De0Nano
-Racc = rate_cosmic1 · rate_cosmic2 · Δtcoinc
-
-
