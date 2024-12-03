@@ -8,25 +8,25 @@
 
 void calibration04() {
     // Length of the arrays for efficiency estimation
-    static const int n1 =14; //V2=1780, V3=1750
+    static const int n1 =12; //V2=1780, V3=1750
 	static const int n2=12; //V1=1800, V3=1750
 	static const int n3= 13; //V1=1800, V2=1780
     static const int time = 30;// Time passed in seconds
     static const int time2=10; 
 
-    double voltage1[n1] = {1730, 1750, 1770, 1780, 1790, 1800, 1830, 1850, 1880, 1900, 1930, 1970, 1990, 2000};
+    double voltage1[n1] = {1730, 1750, 1770, 1780, 1790, 1800, 1830, 1850, 1880, 1900, 1930, 1970};
 	double voltage2[n2]={1700, 1730, 1750, 1780, 1790, 1800, 1830, 1870, 1900, 1930, 1980, 2000};
 	double voltage3[n3]={1700, 1730, 1750, 1770, 1800, 1830, 1850, 1870, 1900, 1930, 1950, 1970, 2000};
 
-    double counts1[n1] = {1687, 2194, 3010, 3463, 3991, 4617, 9590, 14213, 20311, 22637, 25229, 27779, 29361, 29713};
+    double counts1[n1] = {1687, 2194, 3010, 3463, 3991, 4617, 9590, 14213, 20311, 22637, 25229, 27779};
 	double counts2[n2]={736, 1202, 1612, 1958, 2318, 2642, 6327, 20561, 31550, 38323, 45400, 46389};
 	double counts3[n3]={723, 1140, 1466, 2922, 8182, 13497, 17276, 19703, 22478, 24964, 27007, 27971, 28760};
 
-    double counts23[n1] = {541, 521, 484,498,  543, 517, 470, 502, 480, 525, 517, 661, 633, 629};
+    double counts23[n1] = {541, 521, 484,498,  543, 517, 470, 502, 480, 525, 517, 661};
 	double counts13[n2]={111, 96, 113, 102, 107, 99, 115, 118, 116, 121, 102, 109};
 	double counts12[n3]={200, 148, 171, 159, 175, 180, 198, 151, 183, 173, 170, 200, 182};
 
-    double counts123_e1[n1] = {225, 250, 252, 264, 300, 289, 275, 318, 287, 313, 312, 395, 331, 340};
+    double counts123_e1[n1] = {225, 250, 252, 264, 300, 289, 275, 318, 287, 313, 312, 395};
 	double counts123_e2[n2]={62, 71, 93, 94, 99, 91, 109, 113, 113, 118, 99, 104};
 	double counts123_e3[n3]={102, 86, 92, 95, 98, 96, 120, 77, 108, 105, 100, 113, 104};
 
@@ -48,24 +48,24 @@ void calibration04() {
 	TGraphErrors* Counts2Graph2 = new TGraphErrors(n2);
 	TGraphErrors* Counts2Graph3 = new TGraphErrors(n3);
 
-	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Counts"); 
+	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Rate"); 
 	Epsilon1_acc->SetTitle("Efficiency of PMT1 ; Voltage (V); Efficiency");
 
-	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Counts"); 
+	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Rate"); 
 	Epsilon2_acc->SetTitle("Efficiency of PMT2 ; Voltage (V); Efficiency");
 
-	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Counts"); 
+	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Rate"); 
 	Epsilon3_acc->SetTitle("Efficiency of PMT3; Voltage (V); Efficiency");
 
     double w = 40e-9; //soglia: -30.0 mV
     double w_min = 2e-9;
-    double acc23 = time * (150) * (140) * ((2 * w) - (2 * w_min));
+    double acc23 = time * (195) * (145) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 23 " << acc23 << std::endl;
-    double acc13 = time * (103) * (140) * ((2 * w) - (2 * w_min));
+    double acc13 = time * (460) * (145) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 13 " << acc13 << std::endl;
-    double acc12 = time * (103) * (150) * ((2 * w) - (2 * w_min));
+    double acc12 = time * (460) * (195) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 12 " << acc12 << std::endl;
-	double acc123= time * (103) * (acc23/30) *((2*w)-(2*w_min));
+	double acc123= time * (460) * (acc23/30) *((2*w)-(2*w_min));
     std::cout << "Accidentali 123 " << acc123 << std::endl;
 
     for (int k = 0; k < n1; k++) {
