@@ -9,25 +9,32 @@
 void calibration06() {
     // Length of the arrays for efficiency estimation
 
-    static const int n1 =12; //V2=1770 V, V3=1700 V
+    static const int n1 =11; //V2=1700 V, V3=1700 V
 	static const int n2=8; //v1=1620 V, V3=1700 V
-	static const int n3= 14; //V1=1620 V, V2=1770 V
+	static const int n3=11; //V1=1620 V, V2=1700 V
     static const int time = 10;// Time passed in seconds 
-    double voltage1[n1] = {1500, 1520, 1540, 1560, 1580, 1600, 1620, 1640, 1660, 1680, 1700, 1730};
+    //double voltage1[n1] = {1500, 1520, 1540, 1560, 1580, 1600, 1620, 1640, 1660, 1680, 1700, 1730};
+    double voltage1[11]={1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750};
 	double voltage2[n2]={1640,1660, 1680, 1700, 1720, 1740, 1770, 1790, };
-	double voltage3[n3]={1500, 1520, 1540, 1560, 1580,1600, 1620, 1640, 1660, 1680, 1700, 1720, 1740, 1760, };
+	double voltage3[n3]={1500, 1525, 1550, 1575, 1600, 1625, 1650, 1675, 1700, 1725, 1750};
 
-    double counts1[n1] ={511, 655,1014, 1604, 2116,2503, 2631, 2975, 2969, 4180, 6876, 18389};
+    //double counts1[n1] ={511, 655,1014, 1604, 2116,2503, 2631, 2975, 2969, 4180, 6876, 18389};
+    double counts1[n1]={308, 460, 546, 657, 811, 1017, 1276, 1860, 3465, 7626, 19101};
 	double counts2[n2]={365, 653,1005, 1181, 1825, 2850, 5017, 8096 };
-	double counts3[n3]={516, 521, 634, 685,917, 1170, 1645,1704,2761,3116,3666, 5731, 4697, 8118,  };
+    double counts3[n3]={463, 561, 656,767, 1092, 1324,2036, 3030,3737,5990,7124,};
+	//double counts3[n3]={516, 521, 634, 685,917, 1170, 1645,1704,2761,3116,3666, 5731, 4697, 8118,  };
 
-    double counts23[n1] = {35, 34,30, 35, 38, 32,22, 24, 33,23,24, 33};
+    //double counts23[n1] = {35, 34,30, 35, 38, 32,22, 24, 33,23,24, 33};
+    double counts23[n1]={24, 27, 23,  23, 17, 21, 27, 12, 21, 22, 18};
 	double counts13[n2]={83, 85, 84,77, 72, 89,94, 69};
-	double counts12[n3]={15,28,25, 22, 23, 18, 23, 23, 20,32,22,20,21, 24};
+	double counts12[n3]={14, 22, 27,31, 21, 22,16, 25,22,28,17};
+	//double counts12[n3]={15,28,25, 22, 23, 18, 23, 23, 20,32,22,20,21, 24};
 
-    double counts123_e1[n1] = {24,23, 21, 26, 28,24, 16,18, 21,12, 17,24};
+    //double counts123_e1[n1] = {24,23, 21, 26, 28,24, 16,18, 21,12, 17,24};
+    double counts123_e1[n1]={16, 20, 19, 17, 12, 15, 19, 9, 15, 14, 15};
 	double counts123_e2[n2]={12,13, 15, 11, 16, 31, 35,25  };
-	double counts123_e3[n3]={13,23, 18, 16, 15,14, 16, 15, 6, 23,15,12,15, 17};
+	double counts123_e3[n3]={8,12,  20,22,11,12,10, 18,19,20,12};
+	//double counts123_e3[n3]={13,23, 18, 16, 15,14, 16, 15, 6, 23,15,12,15, 17};
 
     double eff1_acc[n1];
 	double eff2_acc[n2];
@@ -47,22 +54,22 @@ void calibration06() {
 	TGraphErrors* Counts2Graph2 = new TGraphErrors(n2);
 	TGraphErrors* Counts2Graph3 = new TGraphErrors(n3);
 
-	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Counts"); 
+	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Rate"); 
 	Epsilon1_acc->SetTitle("Efficiency of PMT1 ; Voltage (V); Efficiency");
 
-	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Counts"); 
+	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Rate"); 
 	Epsilon2_acc->SetTitle("Efficiency of PMT2 ; Voltage (V); Efficiency");
 
-	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Counts"); 
+	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Rate"); 
 	Epsilon3_acc->SetTitle("Efficiency of PMT3; Voltage (V); Efficiency");
 
-    double w = 40e-9; //soglia: -30.0 mV
+    double w = 20e-9; //soglia: -30.0 mV
     double w_min = 2e-9;
-    double acc23 = time * (150) * (140) * ((2 * w) - (2 * w_min));
+    double acc23 = time * (118) * (370) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 23 " << acc23 << std::endl;
-    double acc13 = time * (103) * (140) * ((2 * w) - (2 * w_min));
+    double acc13 = time * (100) * (370) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 13 " << acc13 << std::endl;
-    double acc12 = time * (103) * (150) * ((2 * w) - (2 * w_min));
+    double acc12 = time * (100) * (118) * ((2 * w) - (2 * w_min));
     std::cout << "Accidentali 12 " << acc12 << std::endl;
 	double acc123= time * (103) * (acc23/30) *((2*w)-(2*w_min));
     std::cout << "Accidentali 123 " << acc123 << std::endl;
@@ -94,8 +101,7 @@ std::cout << voltage2[7] << " Singola " << counts2[7] / time << " " << sqrt(coun
         Epsilon3_acc->SetPointError(k, 0, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));//binomial error if we overlook the accidental counts
 		Counts2Graph3->SetPoint(k, voltage3[k], counts3[k] / time);
 	  	Counts2Graph3->SetPointError(k, 0, sqrt(counts3[k]) / time); // Poissonian error 
-    }
-std::cout << voltage3[5] << " Singola " << counts3[5] / time << " " << sqrt(counts3[5]) / time << " Efficienza " << eff3_acc[5] << " " << sqrt((eff3_acc[5] * (1 - eff3_acc[5])) / counts12[5]) << std::endl;
+        }
 
 	 // Plotting single counts
     c1->cd(1);

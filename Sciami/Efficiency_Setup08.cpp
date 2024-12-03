@@ -48,13 +48,13 @@ void calibration0() {
 	TGraphErrors* Counts2Graph2 = new TGraphErrors(n2);
 	TGraphErrors* Counts2Graph3 = new TGraphErrors(n3);
 
-	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Counts"); 
+	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Rate"); 
 	Epsilon1_acc->SetTitle("Efficiency of PMT1 ; Voltage (V); Efficiency");
 
-	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Counts"); 
+	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Rate"); 
 	Epsilon2_acc->SetTitle("Efficiency of PMT2 ; Voltage (V); Efficiency");
 
-	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Counts"); 
+	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Rate"); 
 	Epsilon3_acc->SetTitle("Efficiency of PMT3; Voltage (V); Efficiency");
 
     double w = 40e-9; //soglia: -30.4 mV
