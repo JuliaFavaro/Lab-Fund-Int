@@ -29,4 +29,22 @@ void readData(const std::string& filename, std::vector<int>& canali, std::vector
     // Chiudi il file
     file.close();
 }
+
+void correctTimes(const std::vector<double>& tempi, std::vector<double>& new_time, double dt) {
+    double time_start = 0.0;
+
+    if (tempi.size() > 1) {
+        for (size_t i = 1; i < tempi.size(); ++i) {
+            if (tempi[i-1] <= tempi[i]) {
+                new_time.push_back(tempi[i-1] + time_start);
+            } else {
+                new_time.push_back(tempi[i-1] + time_start);
+                time_start += tempi[i-1] + dt - tempi[i]; // per permettere di avere una dipendenza lineare dal tempo senza discontinuità
+            }
+        }
+        new_time.push_back(tempi.back() + time_start);
+    }
+}
+
+
 #endif // READ_DATA_H

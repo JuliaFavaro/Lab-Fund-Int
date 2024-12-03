@@ -10,9 +10,10 @@
 #include <iostream>
 #include <algorithm>
 
+
 int main() {
     // Nome del file .dat
-    std::string filename = "Set0408_1.dat";
+    std::string filename = "231123test2.dat";
 
     // Vettori per memorizzare i numeri dei canali e i tempi
     std::vector<int> canali;
@@ -20,8 +21,8 @@ int main() {
 
     // Leggi i dati dal file
     readData(filename, canali, tempi);
-    
-    //Grafica i dati originali
+
+    // Grafica i dati originali
     TCanvas *c1 = new TCanvas("c1", "Tempi Non Corretti", 800, 600);
     TGraph *graph_tempi = new TGraph(tempi.size());
     for (size_t i = 0; i < tempi.size(); ++i) {
@@ -31,29 +32,9 @@ int main() {
     graph_tempi->SetMarkerStyle(20);
     graph_tempi->Draw("AP");
 
-    //Correggi per i random resets
-
+    // Correggi per i random resets
     std::vector<double> new_time;
-
-    // Intervallo di tempo
-    double dt = 0.01;
-    // Contatore time_start inizialmente 0
-    double time_start = 0.0;
-
-    // Assicurati che ci siano almeno 2 elementi per poter fare il confronto
-    if (tempi.size() > 1) {
-        // Iniziare il ciclo da 1 perché compariamo con t[i-1]
-        for (size_t i = 1; i < tempi.size(); ++i) {
-            if (tempi[i-1] <= tempi[i]) {
-                new_time.push_back(tempi[i-1] + time_start);
-            } else {
-                new_time.push_back(tempi[i-1] + time_start);
-                time_start += tempi[i-1] + dt - tempi[i]; //per permettere di avere una dipendenza lineare dal tempo senza discontinuità
-            }
-        }
-        //Torno indietro di uno per aggiungere l'ultimo elemento 
-        new_time.push_back(tempi.back() + time_start);
-    }
+    correctTimes(tempi, new_time,0.01);
 
     // Dividere i nuovi tempi in base ai canali 
     std::vector<double> t1, t2;
@@ -64,6 +45,7 @@ int main() {
             t2.push_back(new_time[i]);
         }
     }
+
 
     TCanvas *c2 = new TCanvas("c2", "Tempi Corretti per Canale", 800, 600);
     TMultiGraph *mg = new TMultiGraph();
@@ -99,53 +81,47 @@ int main() {
     double total_time = time_end_total - time_start_total;
 
     // Numero di bin
-    int num_bins = static_cast<int>(total_time / 60.0);
-    std::cout<<"Tempo totale in minuti"<<total_time/60<<std::endl;
+    int num_bins = static_cast<int>(total_time/3600);
+    std::cout<<"Tempo totale in minuti "<<total_time/3600<<std::endl;
 
-    // Creare gli istogrammi
-    TH1F *hist1 = new TH1F("hist1", "Numero di eventi per 10 secondi (Canale 1)", num_bins, time_start_total, time_end_total);
-    TH1F *hist2 = new TH1F("hist2", "Numero di eventi per 10 secondi (Canale 2)", num_bins, time_start_total, time_end_total);
+    // Creare il grafico del rate in funzione del tempo
+    TH1F *rateHist1 = new TH1F("rateHist1", "Rate degli Eventi per 10 secondi (Canale 1)", num_bins, time_start_total, time_end_total);
+    TH1F *rateHist2 = new TH1F("rateHist2", "Rate degli Eventi per 10 secondi (Canale 2)", num_bins, time_start_total, time_end_total);
 
     // Riempire gli istogrammi
     for (const auto& t : t1) {
-        hist1->Fill(t);
+        rateHist1->Fill(t);
     }
     for (const auto& t : t2) {
-        hist2->Fill(t);
+        rateHist2->Fill(t);
     }
 
+    // Calcolare il rate come numero di eventi per bin diviso per la larghezza del bin (10 secondi)
+    for (int i = 1; i <= rateHist1->GetNbinsX(); ++i) {
+        rateHist1->SetBinContent(i, rateHist1->GetBinContent(i) / 10.0);
+    }
+    for (int i = 1; i <= rateHist2->GetNbinsX(); ++i) {
+        rateHist2->SetBinContent(i, rateHist2->GetBinContent(i) / 10.0);
+    }
 
-    // Calcola i valori medi
-    double mean1 = hist1->GetMean(); //andrebbe commentato il metodo con cui le ottiene
-    double mean2 = hist2->GetMean();
-
-    // Crea canvas per gli istogrammi
-    TCanvas *c3 = new TCanvas("c3", "Istogrammi degli Eventi", 800, 600);
+    gStyle->SetOptStat(0000); // Mostra solo la media e la deviazione standard 
+    rateHist1->SetStats(true); // Abilita la statistica 
+    rateHist2->SetStats(true); 
+    // Crea canvas per gli istogrammi del rate
+    TCanvas *c3 = new TCanvas("c3", "Istogrammi del Rate degli Eventi", 1500, 1500);
     c3->Divide(1, 2);
 
-    // Disegna gli istogrammi
+    // Disegna gli istogrammi del rate
     c3->cd(1);
-    hist1->SetFillColor(kRed + 2);
-    hist1->SetXTitle("Tempo (s)");
-    hist1->SetYTitle("Numero di Eventi");
-    hist1->Draw("E");
-    
-    TLine *line1 = new TLine(time_start_total, mean1, time_end_total, mean1);
-    line1->SetLineColor(kRed);
-    line1->SetLineStyle(2); // linea tratteggiata
-    line1->Draw("same");
+    rateHist1->SetFillColor(kRed + 2);
+    rateHist1->SetXTitle("Tempo (s)");
+    rateHist1->SetYTitle("Rate (cps)");
+    rateHist1->Draw("E");
 
     c3->cd(2);
-    hist2->SetFillColor(kBlue + 2);
-    hist2->SetXTitle("Tempo (s)");
-    hist2->SetYTitle("Numero di Eventi");
-     hist2->Draw("E"); //errori poissoniani per default
-     
-    TLine *line2 = new TLine(time_start_total, mean2, time_end_total, mean2);
-    line2->SetLineColor(kRed);
-    line2->SetLineStyle(2); // linea tratteggiata
-    line2->Draw("same");
-
-
+    rateHist2->SetFillColor(kBlue + 2);
+    rateHist2->SetXTitle("Tempo (s)");
+    rateHist2->SetYTitle("Rate (cps)");
+    rateHist2->Draw("E");
     return 0;
 }
