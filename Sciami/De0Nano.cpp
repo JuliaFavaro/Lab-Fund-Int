@@ -1,17 +1,24 @@
-#include "read_data.h"
-#include <TCanvas.h>
-#include <TGraph.h>
-#include <TMultiGraph.h>
-#include <TLegend.h>
-#include <TH1F.h>
-#include <TLine.h>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
+#include <cmath>
 
+#include <TCanvas.h>
+#include <TGraphErrors.h>
+#include <TMultiGraph.h>
+#include <TLegend.h>
+#include <TLatex.h>
+#include <TH1F.h>
+#include <TF1.h>
+#include <TMath.h>
+#include <TStyle.h>
 
-int main() {
+#include "read_data0.h"
+#include "flux_graphs.h"
+
+int main(){
     // Nome del file .dat
     std::string filename = "231123test2.dat";
 
@@ -46,7 +53,6 @@ int main() {
         }
     }
 
-
     TCanvas *c2 = new TCanvas("c2", "Tempi Corretti per Canale", 800, 600);
     TMultiGraph *mg = new TMultiGraph();
     TGraph *graph_t1 = new TGraph(t1.size());
@@ -79,49 +85,65 @@ int main() {
     double time_start_total = *std::min_element(new_time.begin(), new_time.end());
     double time_end_total = *std::max_element(new_time.begin(), new_time.end());
     double total_time = time_end_total - time_start_total;
+    std::cout<<"Tempo totale in minuti "<<total_time/60<<std::endl;
 
-    // Numero di bin
-    int num_bins = static_cast<int>(total_time/3600);
-    std::cout<<"Tempo totale in minuti "<<total_time/3600<<std::endl;
+    // Intervallo di 10s
+    double interval = 10;
 
-    // Creare il grafico del rate in funzione del tempo
-    TH1F *rateHist1 = new TH1F("rateHist1", "Rate degli Eventi per 10 secondi (Canale 1)", num_bins, time_start_total, time_end_total);
-    TH1F *rateHist2 = new TH1F("rateHist2", "Rate degli Eventi per 10 secondi (Canale 2)", num_bins, time_start_total, time_end_total);
+    // Numero di intervalli necessari
+    int num_intervals = static_cast<int>(total_time / interval);
 
-    // Riempire gli istogrammi
-    for (const auto& t : t1) {
-        rateHist1->Fill(t);
-    }
-    for (const auto& t : t2) {
-        rateHist2->Fill(t);
-    }
+    //grafico del rate in funzione del tempo
+    Rategraph(interval, num_intervals, t1, t2);
 
-    // Calcolare il rate come numero di eventi per bin diviso per la larghezza del bin (10 secondi)
-    for (int i = 1; i <= rateHist1->GetNbinsX(); ++i) {
-        rateHist1->SetBinContent(i, rateHist1->GetBinContent(i) / 10.0);
-    }
-    for (int i = 1; i <= rateHist2->GetNbinsX(); ++i) {
-        rateHist2->SetBinContent(i, rateHist2->GetBinContent(i) / 10.0);
+    // Vettore per memorizzare il conteggio degli eventi per ciascun intervallo
+    std::vector<int> counts(num_intervals, 0);
+
+    // Scorri i dati e conta gli eventi per ciascun intervallo
+    for (double t : t1) {
+        int bin = static_cast<int>(t / interval);
+        if (bin < num_intervals) {
+            counts[bin]++;
+        }
     }
 
-    gStyle->SetOptStat(0000); // Mostra solo la media e la deviazione standard 
-    rateHist1->SetStats(true); // Abilita la statistica 
-    rateHist2->SetStats(true); 
-    // Crea canvas per gli istogrammi del rate
-    TCanvas *c3 = new TCanvas("c3", "Istogrammi del Rate degli Eventi", 1500, 1500);
-    c3->Divide(1, 2);
+    // Crea l'istogramma delle occorrenze dei conteggi
+    int max_count = *std::max_element(counts.begin(), counts.end());
+    TH1F* hist = new TH1F("hist", "Occorrenze dei Conteggi in Intervalli di 10s", max_count + 1, 0, max_count + 1);
 
-    // Disegna gli istogrammi del rate
-    c3->cd(1);
-    rateHist1->SetFillColor(kRed + 2);
-    rateHist1->SetXTitle("Tempo (s)");
-    rateHist1->SetYTitle("Rate (cps)");
-    rateHist1->Draw("E");
+    for (int count : counts) {
+        hist->Fill(count);
+    }
 
-    c3->cd(2);
-    rateHist2->SetFillColor(kBlue + 2);
-    rateHist2->SetXTitle("Tempo (s)");
-    rateHist2->SetYTitle("Rate (cps)");
-    rateHist2->Draw("E");
+    // Calcola gli errori come la radice quadrata dei conteggi
+    for (int i = 1; i <= hist->GetNbinsX(); ++i) {
+        hist->SetBinError(i, std::sqrt(static_cast<double>(hist->GetBinContent(i))));
+    }
+
+    // Definisci la funzione di fit poissoniana con due parametri liberi: N e μ
+    TF1* poissonFit = new TF1("poissonFit", "[0]*TMath::Poisson(x, [1])", 0, max_count);
+    poissonFit->SetParameters(1, hist->GetMean()); // Stima iniziale dei parametri
+
+    // Fai il fit di likelihood
+    hist->Fit(poissonFit, "L");
+
+    // Calcola il chi quadro e il p-value
+    double chi2 = poissonFit->GetChisquare();
+    double ndf = poissonFit->GetNDF();
+    double p_value = 1 - TMath::Prob(chi2, ndf);
+
+    std::cout << "Chi quadro: " << chi2 << std::endl;
+    std::cout << "Gradi di libertà (ndf): " << ndf << std::endl;
+    std::cout << "P-value: " << p_value << std::endl;
+
+    // Crea il canvas e disegna l'istogramma con il fit
+    TCanvas* c4 = new TCanvas("c4", "Fit Poissoniano dei Conteggi", 800, 600);
+    gStyle->SetOptFit(1111); // Mostra i parametri di fit e il chi quadro
+    hist->Draw();
+    poissonFit->Draw("same");
+
+    // Mostra il canvas
+    c4->Update();
+
     return 0;
 }

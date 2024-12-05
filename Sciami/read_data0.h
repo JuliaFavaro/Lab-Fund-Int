@@ -1,12 +1,12 @@
-#ifndef READ_DATA_H
-#define READ_DATA_H
+#ifndef READ_DATA0_H
+#define READ_DATA0_H
 
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <vector>
 #include <string>
-// Funzione per leggere e formattare i dati dal file
+// Funzione per leggere e formattare i dati dal file da De0Nano
 void readData(const std::string& filename, std::vector<int>& canali, std::vector<double>& tempi) {
     // Apri il file
     std::ifstream file(filename);
@@ -47,4 +47,4 @@ void correctTimes(const std::vector<double>& tempi, std::vector<double>& new_tim
 }
 
 
-#endif // READ_DATA_H
+#endif // READ_DATA0_H
