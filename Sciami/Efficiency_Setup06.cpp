@@ -83,7 +83,7 @@ void calibration06() {
     }
 
     
-std::cout << voltage1[7] << " Singola " << counts1[7] / time << " " << sqrt(counts1[7]) / time << " Efficienza " << eff1_acc[7] << " " << sqrt((eff1_acc[7] * (1 - eff1_acc[7])) / counts23[7]) << std::endl;
+std::cout << voltage1[0] << " Singola " << counts1[0] / time << " " << sqrt(counts1[0]) / time << " Efficienza " << eff1_acc[0] << " " << sqrt((eff1_acc[0] * (1 - eff1_acc[0])) / counts23[0]) << std::endl;
 
     for (int k = 0; k < n2; k++) {
         eff2_acc[k] = counts123_e2[k] / (counts13[k] - acc13-acc123);
@@ -93,7 +93,7 @@ std::cout << voltage1[7] << " Singola " << counts1[7] / time << " " << sqrt(coun
 	  	Counts2Graph2->SetPointError(k, 0, sqrt(counts2[k]) / time); // Poissonian error 
     }
 
-std::cout << voltage2[7] << " Singola " << counts2[7] / time << " " << sqrt(counts2[7]) / time << " Efficienza " << eff2_acc[7] << " " << sqrt((eff2_acc[7] * (1 - eff2_acc[7])) / counts13[7]) << std::endl;
+std::cout << voltage2[6] << " Singola " << counts2[6] / time << " " << sqrt(counts2[6]) / time << " Efficienza " << eff2_acc[6] << " " << sqrt((eff2_acc[6] * (1 - eff2_acc[6])) / counts13[6]) << std::endl;
 
 	for (int k = 0; k < n3; k++) {
         eff3_acc[k] = counts123_e3[k] / (counts12[k] - acc12-acc123);
@@ -102,6 +102,8 @@ std::cout << voltage2[7] << " Singola " << counts2[7] / time << " " << sqrt(coun
 		Counts2Graph3->SetPoint(k, voltage3[k], counts3[k] / time);
 	  	Counts2Graph3->SetPointError(k, 0, sqrt(counts3[k]) / time); // Poissonian error 
         }
+
+std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(counts3[0]) / time << " Efficienza " << eff3_acc[0] << " " << sqrt((eff3_acc[0] * (1 - eff3_acc[0])) / counts12[0]) << std::endl;
 
 	 // Plotting single counts
     c1->cd(1);
