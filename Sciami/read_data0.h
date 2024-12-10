@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+
 // Funzione per leggere e formattare i dati dal file da De0Nano
 void readData(const std::string& filename, std::vector<int>& canali, std::vector<double>& tempi) {
     // Apri il file
