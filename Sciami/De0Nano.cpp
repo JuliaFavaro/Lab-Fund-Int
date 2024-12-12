@@ -20,7 +20,7 @@
 
 int main(){
     // Nome del file .dat
-    std::string filename = "231123test2.dat";
+    std::string filename = "Dati/Set0408_1.dat";
 
     // Vettori per memorizzare i numeri dei canali e i tempi
     std::vector<int> canali;
@@ -41,11 +41,17 @@ int main(){
 
     // Correggi per i random resets
     std::vector<double> new_time;
+
     correctTimes(tempi, new_time,0.01);
+    // Trova il tempo minimo per far partire l'asse dei tempi da 0 double 
+    double time_start = *std::min_element(new_time.begin(), new_time.end());
+    for (size_t i = 0; i < new_time.size(); ++i){ 
+        new_time[i] -= time_start; 
+    }
 
     // Dividere i nuovi tempi in base ai canali 
     std::vector<double> t1, t2;
-    for (size_t i = 0; i < new_time.size(); ++i) {
+    for (size_t i = 0; i < new_time.size(); ++i){
         if (canali[i] == 1) {
             t1.push_back(new_time[i]);
         } else if (canali[i] == 2) {
@@ -96,6 +102,7 @@ int main(){
     //grafico del rate in funzione del tempo
     Rategraph(interval, num_intervals, t1, t2);
 
+    /*
     // Vettore per memorizzare il conteggio degli eventi per ciascun intervallo
     std::vector<int> counts(num_intervals, 0);
 
@@ -143,7 +150,7 @@ int main(){
     poissonFit->Draw("same");
 
     // Mostra il canvas
-    c4->Update();
+    c4->Update();*/
 
     return 0;
 }
