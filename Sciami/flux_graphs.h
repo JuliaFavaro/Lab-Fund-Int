@@ -39,6 +39,7 @@ void Rategraph(double& interval,int& num_intervals,std::vector<double>& t1,std::
         errors_1[i] = sqrt(count_1) / interval;
         rates_2[i]= count_2/interval;
         errors_2[i] = sqrt(count_2) / interval;
+
     }
 
     // Crea il grafico del rate in funzione del tempo
@@ -65,7 +66,7 @@ void Rategraph(double& interval,int& num_intervals,std::vector<double>& t1,std::
     TLatex latex;
     latex.SetTextSize(0.04);
     latex.SetNDC();
-    latex.DrawLatex(0.5, 0.25, Form("Rate medio: %.0f #pm %.0f Hz", mean_rate, sigma_mean_rate ));
+    latex.DrawLatex(0.78, 0.75, Form("Rate medio: %.0f #pm %.0f Hz", mean_rate, sigma_mean_rate ));
 
     c3->cd(2);
     TGraphErrors* graph2 = new TGraphErrors(num_intervals, time_intervals.data(), rates_2.data(), nullptr, errors_2.data());
@@ -83,9 +84,9 @@ void Rategraph(double& interval,int& num_intervals,std::vector<double>& t1,std::
 
     // Aggiungi media campionaria e deviazione standard al grafico
     TLatex latex2;
-    latex.SetTextSize(0.04);
-    latex.SetNDC();
-    latex.DrawLatex(0.7, 0.45, Form("Rate medio: %.2f #pm %.2f Hz", mean_rate, sigma_mean_rate ));
+    latex2.SetTextSize(0.04);
+    latex2.SetNDC();
+    latex2.DrawLatex(0.72, 0.75, Form("Rate medio: %.2f #pm %.2f Hz", mean_rate, sigma_mean_rate ));
 
     c3->Update();
 }
