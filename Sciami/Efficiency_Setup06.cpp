@@ -6,6 +6,19 @@
 #include <TGraphErrors.h>
 #include <TMath.h>
 
+double sigma_eff(double nt, double nd, double ndacc, double n1, double n2, double time, double ntacc){
+    double epsilon=nt/(nd-ndacc-ntacc); //binomial normal efficiency 
+    double sigma_nt=sqrt(nd*epsilon*(1-epsilon));
+    double sigma_ndacc=sqrt(pow(sqrt(n1)*n2,2)+pow(n1*sqrt(n2),2))*2*(40e-9-2e-9)/time;
+    //std::cout<<sqrt(pow(sigma_ndacc*103*30,2)+pow(ndacc*sqrt(103*30),2))*2*(40e-9-2e-9)/time<<std::endl;
+    
+    double term1=sigma_nt/(nd-ndacc-ntacc);
+    double term2=nt*sigma_ndacc/pow(nd-ndacc-ntacc,2); //ignoring the third component of ntacc
+
+    double sigma_eff=sqrt(pow(term1,2)+pow(term2,2));
+    return sigma_eff;
+}
+
 void calibration06() {
     // Length of the arrays for efficiency estimation
 
@@ -54,13 +67,13 @@ void calibration06() {
 	TGraphErrors* Counts2Graph2 = new TGraphErrors(n2);
 	TGraphErrors* Counts2Graph3 = new TGraphErrors(n3);
 
-	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Rate"); 
+	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Counts per second [cps]"); 
 	Epsilon1_acc->SetTitle("Efficiency of PMT1 ; Voltage (V); Efficiency");
 
-	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Rate"); 
+	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Counts per second [cps]"); 
 	Epsilon2_acc->SetTitle("Efficiency of PMT2 ; Voltage (V); Efficiency");
 
-	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Rate"); 
+	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Counts per second [cps]"); 
 	Epsilon3_acc->SetTitle("Efficiency of PMT3; Voltage (V); Efficiency");
 
     double w = 20e-9; //soglia: -30.0 mV
@@ -77,33 +90,51 @@ void calibration06() {
     for (int k = 0; k < n1; k++) {
         eff1_acc[k] = counts123_e1[k] / (counts23[k] - acc23-acc123);
         Epsilon1_acc->SetPoint(k, voltage1[k], eff1_acc[k]);
-        Epsilon1_acc->SetPointError(k, 0, sqrt((eff1_acc[k] * (1 - eff1_acc[k])) / counts23[k]));  //binomial error if we overlook the accidental counts
+        Epsilon1_acc->SetPointError(k, 0, sigma_eff(counts123_e1[k],counts23[k], acc23,118*10, 370*10, 10, acc123));  //binomial error if we overlook the accidental counts
 		Counts2Graph1->SetPoint(k, voltage1[k], counts1[k] / time);
 	  	Counts2Graph1->SetPointError(k, 0, sqrt(counts1[k]) / time); // Poissonian error 
     }
 
-    
-std::cout << voltage1[0] << " Singola " << counts1[0] / time << " " << sqrt(counts1[0]) / time << " Efficienza " << eff1_acc[0] << " " << sqrt((eff1_acc[0] * (1 - eff1_acc[0])) / counts23[0]) << std::endl;
+    std::cout << std::fixed << std::setprecision(2); // Imposta la precisione a 2 cifre decimali
+
+    std::cout << voltage1[0] << " Singola " 
+            << counts1[0] / time << " " 
+            << sqrt(counts1[0]) / time 
+            << " Efficienza " 
+            << eff1_acc[0] << " " 
+            << sigma_eff(counts123_e1[0], counts23[0],  acc23,118*10, 370*10, 10, acc123) 
+            << std::endl;
 
     for (int k = 0; k < n2; k++) {
         eff2_acc[k] = counts123_e2[k] / (counts13[k] - acc13-acc123);
         Epsilon2_acc->SetPoint(k, voltage2[k], eff2_acc[k]);
-        Epsilon2_acc->SetPointError(k, 0, sqrt((eff2_acc[k] * (1 - eff2_acc[k])) / counts13[k]));//binomial error if we overlook the accidental counts
+        Epsilon2_acc->SetPointError(k, 0, sigma_eff(counts123_e2[k],counts13[k], acc13,100*10, 370*10, 10, acc123));//binomial error if we overlook the accidental counts
 		Counts2Graph2->SetPoint(k, voltage2[k], counts2[k] / time);
 	  	Counts2Graph2->SetPointError(k, 0, sqrt(counts2[k]) / time); // Poissonian error 
     }
 
-std::cout << voltage2[6] << " Singola " << counts2[6] / time << " " << sqrt(counts2[6]) / time << " Efficienza " << eff2_acc[6] << " " << sqrt((eff2_acc[6] * (1 - eff2_acc[6])) / counts13[6]) << std::endl;
+    std::cout << voltage2[6] << " Singola " 
+        << counts2[6] / time << " " 
+        << sqrt(counts2[6]) / time 
+        << " Efficienza "
+        << eff2_acc[6] << " "
+        << sigma_eff(counts123_e2[6],counts13[6], acc13,100*10, 370*10, 10, acc123)<< std::endl;
 
 	for (int k = 0; k < n3; k++) {
         eff3_acc[k] = counts123_e3[k] / (counts12[k] - acc12-acc123);
         Epsilon3_acc->SetPoint(k, voltage3[k], eff3_acc[k]);
-        Epsilon3_acc->SetPointError(k, 0, sqrt((eff3_acc[k] * (1 - eff3_acc[k])) / counts12[k]));//binomial error if we overlook the accidental counts
+        Epsilon3_acc->SetPointError(k, 0, sigma_eff(counts123_e3[k],counts12[k], acc12,100*10, 118*10, 10, acc123));//binomial error if we overlook the accidental counts
 		Counts2Graph3->SetPoint(k, voltage3[k], counts3[k] / time);
 	  	Counts2Graph3->SetPointError(k, 0, sqrt(counts3[k]) / time); // Poissonian error 
         }
 
-std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(counts3[0]) / time << " Efficienza " << eff3_acc[0] << " " << sqrt((eff3_acc[0] * (1 - eff3_acc[0])) / counts12[0]) << std::endl;
+    
+    std::cout << voltage3[0] << " Singola " 
+            << counts3[0] / time << " " 
+            << sqrt(counts3[0]) / time 
+            << " Efficienza " 
+            << eff3_acc[0] << " " 
+            << sigma_eff(counts123_e3[0],counts12[0], acc12,100*10, 118*10, 10, acc123)<< std::endl;
 
 	 // Plotting single counts
     c1->cd(1);
@@ -112,6 +143,7 @@ std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(coun
     Counts2Graph1->SetMarkerColor(kAzure -9);
     Counts2Graph1->SetLineColor(kAzure -9);
     Counts2Graph1->Draw("AP");
+    c1->cd(1)->SetLogy();
 
     c1->cd(3);
     Counts2Graph2->SetMarkerStyle(8);
@@ -119,6 +151,7 @@ std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(coun
     Counts2Graph2->SetMarkerColor(kPink +2);
     Counts2Graph2->SetLineColor(kPink +2);
     Counts2Graph2->Draw("AP");
+    c1->cd(3)->SetLogy();
 
 	c1->cd(5);
     Counts2Graph3->SetMarkerStyle(8);
@@ -126,6 +159,7 @@ std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(coun
     Counts2Graph3->SetMarkerColor(kSpring +3);
     Counts2Graph3->SetLineColor(kSpring +3);
     Counts2Graph3->Draw("AP");
+    c1->cd(5)->SetLogy();
 
     // Plotting efficiency with accidental corrections
     c1->cd(2);
@@ -148,5 +182,6 @@ std::cout << voltage3[0] << " Singola " << counts3[0] / time << " " << sqrt(coun
     Epsilon3_acc->SetMarkerColor(kSpring +3);
     Epsilon3_acc->SetLineColor(kSpring +3);
     Epsilon3_acc->Draw("AP");
+    c1->SaveAs("Risultati/Puntilavoro_06.png");
 
 }
