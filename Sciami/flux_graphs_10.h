@@ -12,7 +12,25 @@
 #include <algorithm>
 #include <iostream>
 
+// Funzione per calcolare il coefficiente di correlazione di Pearson
+double pearsonCorrelation(const std::vector<double>& v1, const std::vector<double>& v2) {
+    double mean1 = std::accumulate(v1.begin(), v1.end(), 0.0) / v1.size();
+    double mean2 = std::accumulate(v2.begin(), v2.end(), 0.0) / v2.size();
+
+    double cov = std::inner_product(v1.begin(), v1.end(), v2.begin(), 0.0,
+        [](double sum, double x) { return sum + x; },
+        [mean1, mean2](double x, double y) { return (x - mean1) * (y - mean2); }) / v1.size();
+
+    double std1 = std::sqrt(std::accumulate(v1.begin(), v1.end(), 0.0,
+        [mean1](double sum, double x) { return sum + std::pow(x - mean1, 2); }) / v1.size());
+    double std2 = std::sqrt(std::accumulate(v2.begin(), v2.end(), 0.0,
+        [mean2](double sum, double x) { return sum + std::pow(x - mean2, 2); }) / v2.size());
+
+    return cov / (std1 * std2);
+}
+
 // Funzione per fare un grafico del rate in funzione del tempo per i tre telescopi 
+// stampa anche su schermo alcune proprietà come variazione di flusso percentile e correlazione tra rates
 void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std::vector<double>& t2, std::vector<double> t3) {
     // Vettori per memorizzare il tempo medio di ciascun intervallo e il rate
     std::vector<double> time_intervals(num_intervals);
@@ -27,12 +45,12 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
     for (int i = 0; i < num_intervals; ++i) {
         double start_time = i * interval;
         double end_time = start_time + interval;
-        double count_1;
-        double count_2;
-        double count_3;
+        double count_1=0;
+        double count_2=0;
+        double count_3=0;
 
-        // Calcola il tempo medio dell'intervallo per il grafico finale (in ore così è più facile da vederci qualcosa)
-        time_intervals[i] = (start_time + end_time) / 2.0 /3600; 
+        // Calcola il tempo medio dell'intervallo per il grafico finale
+        time_intervals[i] = ((start_time + end_time) / 3600)/2; //in ore
         
         // Conta gli eventi nell'intervallo
         count_1 = std::count_if(t1.begin(), t1.end(), [start_time, end_time](double t) {
@@ -52,6 +70,9 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
         errors_2[i] = sqrt(count_2) / interval;
         rates_3[i]= count_3/interval;
         errors_3[i] = sqrt(count_3) / interval;
+
+        rates_2[i]-= 367e-3; // Correggere per il rumore di fondo (367 mHz)
+        errors_2[i]=sqrt(pow(errors_2[i],2)+pow(2e-3,2)); 
     }
 
     // Crea il grafico del rate in funzione del tempo
@@ -68,17 +89,31 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
     graph1->SetLineColor(kRed + 2); //serve per avere lo stesso colore anche nelle barre di errore
     graph1->Draw("AP");
     
-    // Calcola la media campionaria e la sua deviazione standard (dovrebbe essere la stessa cosa che fa THF1 di ROOT)
+    // Calcola la media campionaria
     double sum = std::accumulate(rates_1.begin(), rates_1.end(), 0.0);
-    double mean_rate = sum / rates_1.size();
-    double sigma_mean_rate= mean_rate/sqrt(rates_1.size());
-    //Dovrei calcolare anche la deviazione standard?
+    double mean_rate_06= sum / rates_1.size();
 
-    // Aggiungi media campionaria e deviazione standard al grafico
-    TLatex latex;
-    latex.SetTextSize(0.04);
-    latex.SetNDC();
-    latex.DrawLatex(0.5, 0.25, Form("Rate medio: %.0f #pm %.0f Hz", mean_rate, sigma_mean_rate ));
+    // Calcola la deviazione standard dei dati
+    double sum_squares = std::accumulate(rates_1.begin(), rates_1.end(), 0.0,
+        [mean_rate_06](double sum, double x) { return sum + pow(x - mean_rate_06, 2); });
+    double sigma_06 = sqrt(sum_squares / (rates_1.size() - 1)); // Utilizza N-1 per la stima non distorta
+
+    // Calcola l'errore della media
+    double sigma_mean_rate_06 = sigma_06 / sqrt(rates_1.size());
+
+    // Calcola l'incertezza della deviazione standard
+    double incertezza_sigma_06 = sigma_06 * sqrt(1.0 / (2 * (rates_1.size() - 1)));
+
+    double fluctSetup06 = (sigma_06 / mean_rate_06)* 100;
+    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
+    TPaveText* pave = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave->SetFillColor(kWhite);
+    pave->SetBorderSize(1);
+    pave->SetTextAlign(12);
+    pave->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_06, sigma_mean_rate_06));
+    pave->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_06, incertezza_sigma_06));
+    pave->Draw();
+    /*----------------------------------------------------------------------------------------------*/
 
     c1->cd(2);
     TGraphErrors* graph2 = new TGraphErrors(num_intervals, time_intervals.data(), rates_2.data(), nullptr, errors_2.data()); //lo voglio riportare in h
@@ -88,16 +123,33 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
     graph2->SetMarkerColor(kBlue + 2);
     graph2->SetLineColor(kBlue + 2);
     graph2->Draw("AP");
-    
-    sum = std::accumulate(rates_2.begin(), rates_2.end(), 0.0);
-    mean_rate = sum / rates_2.size();
-    sigma_mean_rate= mean_rate/sqrt(rates_2.size());
 
-    // Aggiungi media campionaria e deviazione standard al grafico
-    TLatex latex2;
-    latex2.SetTextSize(0.04);
-    latex2.SetNDC();
-    latex2.DrawLatex(0.7, 0.45, Form("Rate medio: %.2f #pm %.2f Hz", mean_rate, sigma_mean_rate ));
+    // Calcola la media campionaria
+    sum = std::accumulate(rates_2.begin(), rates_2.end(), 0.0);
+    double mean_rate_08 = sum / rates_2.size();
+
+    // Calcola la deviazione standard dei dati
+    sum_squares = std::accumulate(rates_2.begin(), rates_2.end(), 0.0,
+        [mean_rate_08](double sum, double x) { return sum + pow(x - mean_rate_08, 2); });
+    double sigma_08 = sqrt(sum_squares / (rates_2.size() - 1)); // Utilizza N-1 per la stima non distorta
+
+    // Calcola l'errore della media
+    double sigma_mean_rate_08 = sigma_08 / sqrt(rates_2.size());
+
+    // Calcola l'incertezza della deviazione standard
+    double incertezza_sigma_08 = sigma_08 * sqrt(1.0 / (2 * (rates_2.size() - 1)));
+    
+    double fluctSetup08 = (sigma_08 / mean_rate_08)* 100;
+
+    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
+    TPaveText* pave2 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave2->SetFillColor(kWhite);
+    pave2->SetBorderSize(1);
+    pave2->SetTextAlign(12);
+    pave2->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_08, sigma_mean_rate_08));
+    pave2->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_08, incertezza_sigma_08));
+    pave2->Draw();
+    /*----------------------------------------------------------------------------------------------*/
 
     c1->cd(3);
     TGraphErrors* graph3 = new TGraphErrors(num_intervals, time_intervals.data(), rates_3.data(), nullptr, errors_3.data());
@@ -108,19 +160,49 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
     graph3->SetLineColor(kGreen + 2); //serve per avere lo stesso colore anche nelle barre di errore
     graph3->Draw("AP");
     
-    // Calcola la media campionaria e la sua deviazione standard (dovrebbe essere la stessa cosa che fa THF1 di ROOT)
+    // Calcola la media campionaria
     sum = std::accumulate(rates_3.begin(), rates_3.end(), 0.0);
-    mean_rate = sum / rates_3.size();
-    sigma_mean_rate= mean_rate/sqrt(rates_3.size());
-    //Dovrei calcolare anche la deviazione standard?
+    double mean_rate_04 = sum / rates_3.size();
 
-    // Aggiungi media campionaria e deviazione standard al grafico
-    TLatex latex3;
-    latex3.SetTextSize(0.04);
-    latex3.SetNDC();
-    latex3.DrawLatex(0.5, 0.25, Form("Rate medio: %.0f #pm %.0f Hz", mean_rate, sigma_mean_rate ));
+    // Calcola la deviazione standard dei dati
+    sum_squares = std::accumulate(rates_3.begin(), rates_3.end(), 0.0,
+        [mean_rate_04](double sum, double x) { return sum + pow(x - mean_rate_04, 2); });
+    double sigma_04 = sqrt(sum_squares / (rates_3.size() - 1)); // Utilizza N-1 per la stima non distorta
+
+    // Calcola l'errore della media
+    double sigma_mean_rate_04 = sigma_04 / sqrt(rates_3.size());
+
+    // Calcola l'incertezza della deviazione standard
+    double incertezza_sigma_04 = sigma_04 * sqrt(1.0 / (2 * (rates_3.size() - 1)));
+
+    double fluctSetup04 = (sigma_04 / mean_rate_04)* 100;
+
+    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
+    TPaveText* pave3 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave3->SetFillColor(kWhite);
+    pave3->SetBorderSize(1);
+    pave3->SetTextAlign(12);
+    pave3->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_04, sigma_mean_rate_04 ));
+    pave3->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_04, incertezza_sigma_04));
+    pave3->Draw();
+    /*----------------------------------------------------------------------------------------------*/
+    // Calcola le fluttuazioni in percentuale
+    std::cout << "Fluttuazione Setup06: " << fluctSetup06 << "%" << std::endl;
+    std::cout << "Fluttuazione Setup08: " << fluctSetup08 << "%" << std::endl;
+    std::cout << "Fluttuazione Setup04: " << fluctSetup04 << "%" << std::endl;
+
+    // Calcola le correlazioni
+    double corrSetup06Setup08 = pearsonCorrelation(rates_1, rates_2);
+    double corrSetup06Stanza2004 = pearsonCorrelation(rates_1, rates_3);
+    double corrSetup08Stanza2004 = pearsonCorrelation(rates_2, rates_3);
+
+    std::cout << "Correlazione Setup06-Setup08: " << corrSetup06Setup08 << std::endl;
+    std::cout << "Correlazione Setup06-Stanza2004: " << corrSetup06Stanza2004 << std::endl;
+    std::cout << "Correlazione Setup08-Stanza2004: " << corrSetup08Stanza2004 << std::endl;
 
     c1->Update();
+    
+    c1->SaveAs("Risultati/Rateneltempo_4d.png");
 } 
 
 // Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
@@ -298,6 +380,5 @@ void histogram_fitexponential(std::vector<double>& times, const double& guess_ra
     expFit->Draw("same");
     c4->Update();
 }
-
 
 #endif
