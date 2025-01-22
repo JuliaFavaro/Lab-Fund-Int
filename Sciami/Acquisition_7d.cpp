@@ -19,11 +19,11 @@
 #include "flux_graphs_10.h"
 #include "atmosphere.h"
 
-int acquisizione4giorni() {
+int acquisizione7giorni() {
     std::cout<<"Inizio"<<std::endl;
 
     // Nome del file di input
-    std::string filename = "Dati/FIFOread_20241213-091357.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
+    std::string filename = "Dati/FIFOread_20241213-091357_7day.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
 
     // Vettori per memorizzare i numeri dei canali e i tempi del file
     std::vector<int> decimalNumbers;
@@ -62,20 +62,5 @@ int acquisizione4giorni() {
     int num_intervals=static_cast<int>(total_time / interval);
     Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
 
-    // Vettore di AtmData per memorizzare i dati atmosferici
-    std::vector<AtmData> atmDataList;
-    //effettivi dati atmosferici utilizzati per l'operazione di correlazione
-    std::vector<BinnedData> atmDataBins;
-
-    std::cout<<"Letto parametri atmosferici"<<std::endl;
-    // Leggi i parametri atmosferici che corrispondono a quest'acquisizione.
-    read_atmData(atmDataList, total_time);
-     //print_atmData(atmDataList); //sanity check
-
-    atmDataBins=interpolateAndBin(atmDataList, interval);
-        //print_binnedData(atmDataBins);
-
-    std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
-    
     return 0;
 }
