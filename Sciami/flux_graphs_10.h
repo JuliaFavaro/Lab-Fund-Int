@@ -12,6 +12,43 @@
 #include <algorithm>
 #include <iostream>
 
+// Funzione per calcolare i rates e gli errori
+void CalculateRates(double interval, int num_intervals, const std::vector<double>& t1,
+                    const std::vector<double>& t2, const std::vector<double>& t3,
+                    std::vector<double>& rates_1, std::vector<double>& errors_1,
+                    std::vector<double>& rates_2, std::vector<double>& errors_2,
+                    std::vector<double>& rates_3, std::vector<double>& errors_3,
+                    std::vector<double>& time_intervals) {
+    
+    for (int i = 0; i < num_intervals; ++i) {
+        double start_time = i * interval;
+        double end_time = start_time + interval;
+
+        // Calcola il tempo medio dell'intervallo per il grafico finale
+        time_intervals[i] = ((start_time + end_time) / 3600) / 2; // in ore
+
+        int count_1 = std::count_if(t1.begin(), t1.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        int count_2 = std::count_if(t2.begin(), t2.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        int count_3 = std::count_if(t3.begin(), t3.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        // Calcola il rate come numero di eventi diviso per la larghezza dell'intervallo
+        rates_1[i] = count_1 / interval;
+        errors_1[i] = sqrt(count_1) / interval;
+        rates_2[i] = count_2 / interval - 367e-3; // Correggere per il rumore di fondo (367 mHz)
+        errors_2[i] = sqrt(count_2) / interval + sqrt(pow(2e-3, 2));
+        rates_3[i] = count_3 / interval;
+        errors_3[i] = sqrt(count_3) / interval;
+    }
+}
+
 // Funzione per calcolare il coefficiente di correlazione di Pearson
 double pearsonCorrelation(const std::vector<double>& v1, const std::vector<double>& v2) {
     double mean1 = std::accumulate(v1.begin(), v1.end(), 0.0) / v1.size();
@@ -31,8 +68,9 @@ double pearsonCorrelation(const std::vector<double>& v1, const std::vector<doubl
 
 // Funzione per fare un grafico del rate in funzione del tempo per i tre telescopi 
 // stampa anche su schermo alcune proprietà come variazione di flusso percentile e correlazione tra rates
-void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std::vector<double>& t2, std::vector<double>& t3) {
-    // Vettori per memorizzare il tempo medio di ciascun intervallo e il rate
+void Rategraph3(double& interval, int& num_intervals, const std::vector<double>& t1,
+                 const std::vector<double>& t2, const std::vector<double>& t3) {
+    // Vettori per memorizzare i risultati
     std::vector<double> time_intervals(num_intervals);
     std::vector<double> rates_1(num_intervals, 0);
     std::vector<double> errors_1(num_intervals, 0);
@@ -41,39 +79,10 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
     std::vector<double> rates_3(num_intervals, 0);
     std::vector<double> errors_3(num_intervals, 0);
 
-    // Scorri i dati e conta gli eventi per ciascun intervallo
-    for (int i = 0; i < num_intervals; ++i) {
-        double start_time = i * interval;
-        double end_time = start_time + interval;
-        double count_1=0;
-        double count_2=0;
-        double count_3=0;
-
-        // Calcola il tempo medio dell'intervallo per il grafico finale
-        time_intervals[i] = ((start_time + end_time) / 3600)/2; //in ore
-        
-        // Conta gli eventi nell'intervallo
-        count_1 = std::count_if(t1.begin(), t1.end(), [start_time, end_time](double t) {
-            return t >= start_time && t < end_time;
-        });        
-        count_2 = std::count_if(t2.begin(), t2.end(), [start_time, end_time](double t) {
-            return t >= start_time && t < end_time;
-        });
-        count_3=std::count_if(t3.begin(),t3.end(), [start_time, end_time](double t){
-            return t>=start_time && t<end_time;
-        });
-
-        // Calcola il rate come numero di eventi diviso per la larghezza dell'intervallo
-        rates_1[i]= count_1/interval;
-        errors_1[i] = sqrt(count_1) / interval;
-        rates_2[i]= count_2/interval;
-        errors_2[i] = sqrt(count_2) / interval;
-        rates_3[i]= count_3/interval;
-        errors_3[i] = sqrt(count_3) / interval;
-
-        rates_2[i]-= 367e-3; // Correggere per il rumore di fondo (367 mHz)
-        errors_2[i]=sqrt(pow(errors_2[i],2)+pow(2e-3,2)); 
-    }
+    // Calcola i rates
+    CalculateRates(interval, num_intervals, t1, t2, t3,
+                   rates_1, errors_1, rates_2, errors_2,
+                   rates_3, errors_3, time_intervals);
 
     // Crea il grafico del rate in funzione del tempo
     TCanvas* c1 = new TCanvas("c1", "Rate degli eventi in funzione del tempo", 800, 600);

@@ -40,7 +40,7 @@ void reset_clock( std::vector<int>& decimalNumbers, std::vector<double>& counts,
 
     //trovo il primo reset
     while (true){
-        if (decimalNumbers[it]==static_cast<double>(524288)){
+        if (decimalNumbers[it]==static_cast<int>(524288)){
             inizio_file=it;
             break;
         }
@@ -49,7 +49,7 @@ void reset_clock( std::vector<int>& decimalNumbers, std::vector<double>& counts,
 
     int i=0;
     for (i=inizio_file+1; i<decimalNumbers.size(); ++i){
-        if (decimalNumbers[i]==static_cast<double>(524288)){
+        if (decimalNumbers[i]==static_cast<int>(524288)){
             ++numero_reset; //clock resettato
             ++i; //salti questo elemento
         }

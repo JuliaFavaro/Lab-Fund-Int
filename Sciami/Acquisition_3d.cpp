@@ -19,7 +19,7 @@
 #include "flux_graphs_10.h"
 #include "atmosphere.h"
 
-int acquisizione4giorni() {
+int acquisizione3giorni() {
     std::cout<<"Inizio"<<std::endl;
 
     // Nome del file di input
@@ -76,6 +76,7 @@ int acquisizione4giorni() {
         //print_binnedData(atmDataBins);
 
     std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
-    
+    plotCorrelation(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+
     return 0;
 }
