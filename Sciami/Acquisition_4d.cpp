@@ -39,7 +39,7 @@ int acquisizione4giorni() {
     double time_start_total = *std::min_element(tempi.begin(), tempi.end());
     double time_end_total = *std::max_element(tempi.begin(), tempi.end());
     double total_time = time_end_total - time_start_total; //secondi
-    std::cout << "Tempo totale in giorni: " << total_time / (3600*24) << std::endl;
+    std::cout << "Tempo totale in ore: " << total_time / (3600) << std::endl;
 
     // Vettore di vettori per memorizzare i tempi di arrivo per ciascun canale
     std::vector<std::vector<double>> channelTimes(7);
@@ -56,11 +56,26 @@ int acquisizione4giorni() {
     }
     std::cout<<"Diviso in canali"<<std::endl;
 
-    /*Legenda dei telescopi: il canale 1 è il canale del Setup06, il canale 3
-    è il Setup08, mentre il canale 6 è il telescopio in Stanza2004.*/
+    /*Legenda dei telescopi: il canale 2 è il canale del Setup06, il canale 4
+    è il Setup08, mentre il canale 7 è il telescopio in Stanza2004.*/
     double interval = 3600; //1 ora
     int num_intervals=static_cast<int>(total_time / interval);
     Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
-    
+
+
+    /*Andiamo a leggere i parametri atmosferici che corrispondono a quest'acquisizione. */
+    std::vector<std::string> dates;
+    std::vector<std::string> orari;
+    std::vector<double> temperature;
+    std::vector<double> humidity;
+    std::vector<double> pression;
+
+    read_atmData(dates,orari,temperature,humidity,pression,total_time);
+    // Visualizzare i dati estratti
+    for (size_t i = 0; i < dates.size(); ++i) {
+        std::cout << "Data: " << dates[i] << ", Ora: " << orari[i] << ", Temp: " << temperature[i]
+                << ", Umidità: " << humidity[i] << ", Pressione: " << pression[i] << std::endl;
+    }
+
     return 0;
 }
