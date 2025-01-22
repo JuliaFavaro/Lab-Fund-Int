@@ -10,6 +10,8 @@
 #include <chrono> // Definire una data calendariale
 #include <algorithm> // Per std::find
 
+#include "flux_graphs_10.h"
+
 // Struttura per rappresentare i dati atmosferici come una specie di dizionario
 struct AtmData {
     std::string date;
@@ -264,39 +266,66 @@ void print_binnedData(const std::vector<BinnedData>& atmDataBins) {
 }
 
 // Funzione per tracciare il grafico di correlazione
-void plotCorrelation(const std::vector<BinnedData>& atmDataBins, const std::vector<RateData>& rates_1, const std::vector<RateData>& rates_2) {
-    if (atmDataBins.size() != rates_1.size() || atmDataBins.size() != rates_2.size()) {
-        std::cerr << "Dimensioni dei vettori non corrispondono!" << std::endl;
-        return;
-    }
+void plotCorrelation(const std::vector<BinnedData>& atmDataBins, double& interval, int& num_intervals, const std::vector<double>& t1,
+                 const std::vector<double>& t2, const std::vector<double>& t3) {
+
+    // Vettori per memorizzare i risultati
+    std::vector<double> time_intervals(num_intervals);
+    std::vector<double> rates_1(num_intervals, 0);
+    std::vector<double> errors_1(num_intervals, 0);
+    std::vector<double> rates_2(num_intervals, 0);
+    std::vector<double> errors_2(num_intervals, 0);
+    std::vector<double> rates_3(num_intervals, 0);
+    std::vector<double> errors_3(num_intervals, 0);
+
+    // Calcola i rates
+    CalculateRates(interval, num_intervals, t1, t2, t3,
+                   rates_1, errors_1, rates_2, errors_2,
+                   rates_3, errors_3, time_intervals);
 
     TGraphErrors* graph1 = new TGraphErrors(atmDataBins.size());
     TGraphErrors* graph2 = new TGraphErrors(atmDataBins.size());
     TGraphErrors* graph3 = new TGraphErrors(atmDataBins.size());
 
     for (size_t i = 0; i < atmDataBins.size(); ++i) {
-        graph1->SetPoint(i, atmDataBins[i].avgTemperature, rates_1[i].rate);
-        graph1->SetPointError(i, 0, rates_1[i].error);
+        graph1->SetPoint(i, atmDataBins[i].avgTemperature, rates_1[i]);
+        graph1->SetPointError(i, 0, errors_1[i]);
 
-        graph2->SetPoint(i, atmDataBins[i].avgTemperature, rates_2[i].rate);
-        graph2->SetPointError(i, 0, rates_2[i].error);
+        graph2->SetPoint(i, atmDataBins[i].avgTemperature, rates_2[i]);
+        graph2->SetPointError(i, 0, errors_2[i]);
         
-        graph3->SetPoint(i, atmDataBins[i].avgTemperature, rates_3[i].rate);
-        graph3->SetPointError(i, 0, rates_3[i].error);
+        graph3->SetPoint(i, atmDataBins[i].avgTemperature, rates_3[i]);
+        graph3->SetPointError(i, 0, errors_3[i]);
     }
 
-    TCanvas* caanvas = new TCanvas("c1", "Grafico di Correlazione", 800, 600);
+    TCanvas* canvas = new TCanvas("canvas", "Correlazione tra Temperatura Atmosferica e Rates", 800, 600);
 	canvas->SetGrid(); 
-    c1->Divide(1, 3); //colonne, righe
+    canvas->Divide(1, 3); //colonne, righe
 
-    graph1->SetTitle("Correlazione tra Temperatura Atmosferica e Rates");
-    graph1->GetXaxis()->SetTitle("Temperatura (°C)");
-    graph1->GetYaxis()->SetTitle("Rates");
-    
+    canvas->cd(1);
+    graph1->SetTitle("Telescopio 06;Temperatura (°C);Rate (Hz)"); 
     graph1->Draw("AP"); // Disegna il primo grafico
+    graph1->SetMarkerStyle(8); 
+    graph1->SetMarkerSize(1);
+    graph1->SetMarkerColor(kRed + 2);
+    graph1->SetLineColor(kRed + 2); //serve per avere lo stesso colore anche nelle barre di errore
+    graph1->Draw("AP");
+    
+    canvas->cd(2);
+    graph2->SetTitle("Telescopio 08;Temperatura (°C);Rate (Hz)"); 
+    graph2->SetMarkerStyle(8); 
+    graph2->SetMarkerSize(1);
+    graph2->SetMarkerColor(kBlue + 2);
+    graph2->SetLineColor(kBlue + 2);
+    graph2->Draw("AP");
 
-    graph2->SetMarkerColor(kRed); // Cambia colore per il secondo grafico
-    graph2->Draw("P"); // Disegna il secondo grafico
+    canvas->cd(3);
+    graph3->SetTitle("Telescopio 04;Temperatura (°C);Rate (Hz)"); 
+    graph3->SetMarkerStyle(8); 
+    graph3->SetMarkerSize(1);
+    graph3->SetMarkerColor(kGreen + 2);
+    graph3->SetLineColor(kGreen + 2); //serve per avere lo stesso colore anche nelle barre di errore
+    graph3->Draw("AP");
 
     canvas->Update();
 }
