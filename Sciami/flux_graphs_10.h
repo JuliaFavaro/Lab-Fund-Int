@@ -31,7 +31,7 @@ double pearsonCorrelation(const std::vector<double>& v1, const std::vector<doubl
 
 // Funzione per fare un grafico del rate in funzione del tempo per i tre telescopi 
 // stampa anche su schermo alcune proprietà come variazione di flusso percentile e correlazione tra rates
-void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std::vector<double>& t2, std::vector<double> t3) {
+void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std::vector<double>& t2, std::vector<double>& t3) {
     // Vettori per memorizzare il tempo medio di ciascun intervallo e il rate
     std::vector<double> time_intervals(num_intervals);
     std::vector<double> rates_1(num_intervals, 0);
@@ -202,7 +202,7 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
 
     c1->Update();
     
-    c1->SaveAs("Risultati/Rateneltempo_4d.png");
+    //c1->SaveAs("Risultati/Rateneltempo_4d.png");
 } 
 
 // Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
