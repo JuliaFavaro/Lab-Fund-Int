@@ -202,7 +202,7 @@ void Rategraph3(double& interval,int& num_intervals,std::vector<double>& t1,std:
 
     c1->Update();
     
-    //c1->SaveAs("Risultati/Rateneltempo_4d.png");
+    //c1->SaveAs("Risultati/Rateneltempo_7d.png");
 } 
 
 // Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
