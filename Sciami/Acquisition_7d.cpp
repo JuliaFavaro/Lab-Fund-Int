@@ -62,5 +62,24 @@ int acquisizione7giorni() {
     int num_intervals=static_cast<int>(total_time / interval);
     Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
 
+    
+    // Vettore di AtmData per memorizzare i dati atmosferici
+    std::vector<AtmData> atmDataList;
+    //effettivi dati atmosferici utilizzati per l'operazione di correlazione
+    std::vector<BinnedData> atmDataBins;
+
+    std::cout<<"Letto parametri atmosferici"<<std::endl;
+    // Leggi i parametri atmosferici che corrispondono a quest'acquisizione.
+    read_atmData(atmDataList, total_time);
+     //print_atmData(atmDataList); //sanity check
+
+    atmDataBins=interpolateAndBin(atmDataList, interval);
+        //print_binnedData(atmDataBins);
+
+    std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
+    plotCorrelationTemp(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    plotCorrelationPress(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+
     return 0;
 }
