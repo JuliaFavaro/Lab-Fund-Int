@@ -6,12 +6,11 @@
 - _Efficiency_Setup08.cpp_, _Efficiency_Setup06.cpp_, _Efficiency_Stanza2004.cpp_ : C++ code to calculate the efficiency and detection rate for each PMT in each Setup for different Alimentation voltage. It considers also the correction due to accidental counts.
 - _ToyMonteCarlo.py_ : Python code to estimate the cosmic flux  detection rate for each setup, by adjusting for the geometrical acceptance of each setup.
 - _read_data10.h_: Library in C++ that contains the definition of the reading functions required to read the data coming from the De10Nano DAQ system. 
-- _atmosphere.h_: Library in C++ that contains the definition of the reading functions required to read the data coming from the De10Nano DAQ system. 
-- _flux_graphs_10.h_: Library in C++ that contains the definition of the reading functions required to read the data coming from the De10Nano DAQ system. 
-- _De10Nano.cpp_ : Code to read the data coming from the De10Nano FPGA acquisition system.
+- _flux_graphs_10.h_: Library in C++ that contains the function to calculate the rates of each of our telescopes. Creates the graphs of the rate as a function of time and exponential and poissonian distributions of each telescope cosmic rays detection.
+- _atmosphere.h_: Library in C++ that contains the definition of the reading functions required to read and bin the data coming from the UniPi meteorologic station. Creates the dispersion graphs of the rate of each each telescope as a function of these atmospheric parameters, such as humidity, temperature and pression. 
 
-- _De0Nano.cpp_ : Code to read the data coming from the De0Nano FPGA acqusition system. Creates a graph of the rate of each telescope as a function of time. Creates an histogram of the counts distribution for each telescope. 
 - _read_data0.h_ : File C++ that contains the definition of the reading functions required to read the data coming from the De0Nano DAQ system. It also reconverts the time in linear manner.
+- _De0Nano.cpp_ : Code to read the data coming from the De0Nano FPGA acqusition system. Creates a graph of the rate of each telescope as a function of time. Creates an histogram of the counts distribution for each telescope. 
 
 ### Objectives of the experience
 1. Verify the existence of possible temporal correlations between the arrivals of cosmic rays at successive times.

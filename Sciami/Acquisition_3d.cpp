@@ -73,10 +73,19 @@ int acquisizione3giorni() {
      //print_atmData(atmDataList); //sanity check
 
     atmDataBins=interpolateAndBin(atmDataList, interval);
-        //print_binnedData(atmDataBins);
+    //print_binnedData(atmDataBins);
+
+    //plotWeatherData(atmDataBins);
 
     std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
-    plotCorrelation(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    plotCorrelationTemp(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    //plotCorrelationPress(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    //plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
 
+    std::cout<<"Distribuzione poissoniana"<<std::endl;
+
+    std::cout<<"Distribuzione esponenziale"<<std::endl;
+    
+    std::cout<<"Efficienza dei fotomoltiplicatori nel tempo"<<std::endl;
     return 0;
 }
