@@ -265,35 +265,6 @@ void print_binnedData(const std::vector<BinnedData>& atmDataBins) {
     }
 }
 
-// Funzione per rimuovere duplicati 
-const double EPSILON = 1e-9; // floating-point comparison
-
-bool areAlmostEqual(double a, double b) {
-    return std::fabs(a - b) < EPSILON;
-}
-
-void removeDuplicates(const std::vector<BinnedData>& atmDataBins, std::vector<double>& uniqueTemperatures) {
-    for (const auto& bin : atmDataBins) {
-        double temperature = bin.avgTemperature;
-
-        // Check if the temperature is already present within the tolerance
-        bool found = false;
-        for (const auto& uniqueTemp : uniqueTemperatures) {
-            if (areAlmostEqual(uniqueTemp, temperature)) {
-                found = true;
-                break;
-            }
-        }
-
-        // If not found, add the temperature
-        if (!found) {
-            uniqueTemperatures.push_back(temperature);
-        }
-        
-    }
-}
-
-
 // Funzione per tracciare il grafico di correlazione (temperatura)
 void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& interval, int& num_intervals, const std::vector<double>& t1,
                  const std::vector<double>& t2, const std::vector<double>& t3) {
@@ -311,17 +282,11 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
                    rates_1, errors_1, rates_2, errors_2,
                    rates_3, errors_3, time_intervals);
 
-    // Verifica che le dimensioni dei vettori siano corrette
-    //std::cout<<"Atmo "<<atmDataBins.size()<<" rates "<<rates_1.size()<<std::endl;
-    std::vector<double> uniqueTemperatures;
-    // Creazione del grafico con errori
     TGraphErrors* graph3 = new TGraphErrors(rates_3.size());
-    removeDuplicates(atmDataBins, uniqueTemperatures);
-    std::cout<<"Atmo "<<uniqueTemperatures.size()<<" rates "<<rates_1.size()<<std::endl;
-    for (size_t i = 0; i < uniqueTemperatures.size(); ++i) {
+    for (size_t i = 0; i < rates_3.size(); ++i) {
         if (rates_3[i]!=0){
-            graph3->SetPoint(i, uniqueTemperatures[i], rates_3[i]); // Imposta il punto (temperatura, rate)
-            graph3->SetPointError(i, 0, errors_3[i]); // Imposta gli errori
+            graph3->SetPoint(i, atmDataBins[i].avgTemperature, rates_3[i]); 
+            graph3->SetPointError(i, 0, errors_3[i]);
         }
     }
 
@@ -334,6 +299,101 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
     graph3->SetMarkerColor(kGreen + 2);
     graph3->SetLineColor(kGreen + 2); 
     graph3->Draw("AP");
+
+    
+    // Esegui il fit lineare
+    TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 14); // Sostituisci con l'intervallo appropriato
+    
+    // Impostazione dei parametri iniziali
+    fitFunc->SetParameter(0, 11.3); // Intercetta iniziale
+    fitFunc->SetParameter(1, +0.02); // Coefficiente angolare iniziale
+    graph3->Fit(fitFunc);
+
+
+    // Stampa i risultati del fit con incertezze
+    double slope = fitFunc->GetParameter(1);   // Coefficiente angolare
+    double intercept = fitFunc->GetParameter(0); // Intercetta
+    double slopeError = fitFunc->GetParError(1);   // Incertezza sul coefficiente angolare
+    double interceptError = fitFunc->GetParError(0); // Incertezza sull'intercetta
+
+    // Imposta la precisione a due cifre significative
+    std::cout << std::fixed << std::setprecision(2);
+    
+    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
+    TPaveText* pave1 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave1->SetFillColor(kWhite);
+    pave1->SetBorderSize(1);
+    pave1->SetTextAlign(14);
+    pave1->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/#circC", slope, slopeError));
+    pave1->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
+    pave1->Draw();
+
+    canvastemp->Update();
+}
+
+void plotCorrTemp1d(const std::vector<BinnedData>& atmDataBins, double& interval, int& num_intervals, const std::vector<double>& t1,
+                 const std::vector<double>& t2, const std::vector<double>& t3){
+    // Vettori per memorizzare i risultati
+    std::vector<double> time_intervals(num_intervals);
+    std::vector<double> rates_1(num_intervals, 0);
+    std::vector<double> errors_1(num_intervals, 0);
+    std::vector<double> rates_2(num_intervals, 0);
+    std::vector<double> errors_2(num_intervals, 0);
+    std::vector<double> rates_3(num_intervals, 0);
+    std::vector<double> errors_3(num_intervals, 0);
+    // Calcola i rates
+    CalculateRates(interval, num_intervals, t1, t2, t3,
+                   rates_1, errors_1, rates_2, errors_2,
+                   rates_3, errors_3, time_intervals);
+                   
+    TGraphErrors* graph3 = new TGraphErrors();
+    int j = 0;
+
+    // Seleziona solo i dati tra il 14° e il 26° bin (00:00 - 12:00 del giorno 14/12/2024)
+    for (size_t i = 14; i < 27 && i < rates_3.size(); ++i) {
+        if (rates_3[i] != 0 && atmDataBins[i].avgTemperature != 0) { // Controlla anche la temperatura
+            graph3->SetPoint(j, atmDataBins[i].avgTemperature, rates_3[i]);
+            graph3->SetPointError(j, 0, errors_3[i]);
+            j++;
+        }
+    }
+
+    TCanvas* canvastemp = new TCanvas("canvastemp", "Correlazione tra Temperatura Atmosferica e Rates in mezza giornata", 800, 600);
+	canvastemp->SetGrid(); 
+
+    graph3->SetTitle("Setup04 e Temperatura in un arco di mezza giornata;Temperatura (#circC);Rate (Hz)"); 
+    graph3->SetMarkerStyle(8); 
+    graph3->SetMarkerSize(1);
+    graph3->SetMarkerColor(kGreen + 2);
+    graph3->SetLineColor(kGreen + 2); 
+    graph3->Draw("AP");
+
+    // Esegui il fit lineare
+    TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 14); // Sostituisci con l'intervallo appropriato
+    
+    // Impostazione dei parametri iniziali
+    fitFunc->SetParameter(0, 11.3); // Intercetta iniziale
+    fitFunc->SetParameter(1, +0.02); // Coefficiente angolare iniziale
+    graph3->Fit(fitFunc);
+
+
+    // Stampa i risultati del fit con incertezze
+    double slope = fitFunc->GetParameter(1);   // Coefficiente angolare
+    double intercept = fitFunc->GetParameter(0); // Intercetta
+    double slopeError = fitFunc->GetParError(1);   // Incertezza sul coefficiente angolare
+    double interceptError = fitFunc->GetParError(0); // Incertezza sull'intercetta
+
+    // Imposta la precisione a due cifre significative
+    std::cout << std::fixed << std::setprecision(2);
+    
+    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
+    TPaveText* pave1 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave1->SetFillColor(kWhite);
+    pave1->SetBorderSize(1);
+    pave1->SetTextAlign(14);
+    pave1->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/#circC", slope, slopeError));
+    pave1->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
+    pave1->Draw();
 
     canvastemp->Update();
 }
@@ -356,9 +416,10 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
                    rates_1, errors_1, rates_2, errors_2,
                    rates_3, errors_3, time_intervals);
 
+    
     TGraphErrors* graph3 = new TGraphErrors(num_intervals);
 
-    for (size_t i = 0; i < num_intervals; ++i) {
+    for (size_t i = 0; i < rates_3.size(); ++i) {
         graph3->SetPoint(i, atmDataBins[i].avgPressure, rates_3[i]);
         graph3->SetPointError(i, 0, errors_3[i]);
     }
@@ -374,11 +435,11 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
     graph3->Draw("AP");
 
     // Esegui il fit lineare
-    TF1* fitFunc = new TF1("fitFunc", "pol1", 1020, 1040); // Sostituisci con l'intervallo appropriato
+    TF1* fitFunc = new TF1("fitFunc", "pol1", 1018, 1040); // Sostituisci con l'intervallo appropriato
     
     // Impostazione dei parametri iniziali
-    fitFunc->SetParameter(0, 11); // Intercetta iniziale (a)
-    fitFunc->SetParameter(1, 0); // Coefficiente angolare iniziale (b)
+    fitFunc->SetParameter(0, 11.10); // Intercetta iniziale
+    fitFunc->SetParameter(1, -0.02); // Coefficiente angolare iniziale
     graph3->Fit(fitFunc);
 
     // Stampa i risultati del fit con incertezze
@@ -395,7 +456,7 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
     pave2->SetFillColor(kWhite);
     pave2->SetBorderSize(1);
     pave2->SetTextAlign(14);
-    pave2->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/#circC", slope, slopeError));
+    pave2->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/mbar", slope, slopeError));
     pave2->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
     pave2->Draw();
 
@@ -422,7 +483,7 @@ void plotCorrelationHum(const std::vector<BinnedData>& atmDataBins, double& inte
 
     TGraphErrors* graph3 = new TGraphErrors(num_intervals);
 
-    for (size_t i = 0; i < num_intervals; ++i) {
+    for (size_t i = 0; i < rates_3.size(); ++i) {
         graph3->SetPoint(i, atmDataBins[i].avgHumidity, rates_3[i]);
         graph3->SetPointError(i, 0, errors_3[i]);
     }
@@ -436,35 +497,56 @@ void plotCorrelationHum(const std::vector<BinnedData>& atmDataBins, double& inte
     graph3->SetMarkerColor(kGreen + 2);
     graph3->SetLineColor(kGreen + 2); //serve per avere lo stesso colore anche nelle barre di errore
     graph3->Draw("AP");
-
-    // Esegui il fit lineare
-    TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 100); // Sostituisci con l'intervallo appropriato
-    
-    // Impostazione dei parametri iniziali
-    fitFunc->SetParameter(0, 11); // Intercetta iniziale (a)
-    fitFunc->SetParameter(1, 0); // Coefficiente angolare iniziale (b)
-    graph3->Fit(fitFunc);
-
-    // Stampa i risultati del fit con incertezze
-    double slope = fitFunc->GetParameter(1);   // Coefficiente angolare
-    double intercept = fitFunc->GetParameter(0); // Intercetta
-    double slopeError = fitFunc->GetParError(1);   // Incertezza sul coefficiente angolare
-    double interceptError = fitFunc->GetParError(0); // Incertezza sull'intercetta
-
-    // Imposta la precisione a due cifre significative
-    std::cout << std::fixed << std::setprecision(2);
-    
-    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
-    TPaveText* pave3 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
-    pave3->SetFillColor(kWhite);
-    pave3->SetBorderSize(1);
-    pave3->SetTextAlign(14);
-    pave3->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/#circC", slope, slopeError));
-    pave3->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
-    pave3->Draw();
-
     canvashum->Update();
 }
 
+// Funzione per tracciare parametri atmosferici in funzione del tempo
+void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
+    double beginning=atmDataBins[0].startTime;
+
+    std::vector<double> hours; // Valori centrali del bin in ore
+    std::vector<double> DT; // Variazione della temperatura
+    std::vector<double> DP; //Variazione della pressione
+    std::vector<double> hum; //Variazione della pressione
+
+    for (const auto& bin : atmDataBins) {
+        // Calcola il valore centrale del bin in ore
+        double centerTime = ((bin.startTime + bin.endTime) / (2.0) -beginning)/3600;
+
+        hours.push_back(centerTime);
+        DT.push_back(bin.avgTemperature);
+        DP.push_back(bin.avgPressure);
+        hum.push_back(bin.avgHumidity);
+    }
+
+    // Crea il grafico dei parametri in funzione del tempo
+    TCanvas* canvasatm = new TCanvas("canvasatm", "Parametri atmosferici in funzione del tempo", 1500, 1200);
+	canvasatm->SetGrid(); 
+    canvasatm->Divide(1, 3); //colonne, righe
+	
+    canvasatm->cd(1);
+    TGraph* graphtemp= new TGraph(hours.size(), hours.data(), DT.data());
+    graphtemp->SetTitle("Temperatura;Tempo (h);Temperatura (#circC)"); 
+    graphtemp->SetMarkerStyle(20); 
+    graphtemp->SetMarkerSize(1);
+    graphtemp->Draw("APL"); 
+
+    canvasatm->cd(2);
+    TGraph* graphpress= new TGraph(hours.size(), hours.data(), DP.data());
+    graphpress->SetTitle("Pressione;Tempo (h);Pressione (mbar)"); 
+    graphpress->SetMarkerStyle(21); 
+    graphpress->SetMarkerSize(1);
+    graphpress->Draw("APL"); 
+
+    canvasatm->cd(3);
+    TGraph* graphhum= new TGraph(hours.size(), hours.data(), hum.data());
+    graphhum->SetTitle("Umidita;Tempo (h);Umidita (%)"); 
+    graphhum->SetMarkerStyle(22); 
+    graphhum->SetMarkerSize(1);
+    graphhum->Draw("APL");   
+
+    canvasatm->SaveAs("Risultati/Atm_7d.png");
+    return;
+}
 
 #endif 

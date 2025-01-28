@@ -70,22 +70,46 @@ int acquisizione3giorni() {
     std::cout<<"Letto parametri atmosferici"<<std::endl;
     // Leggi i parametri atmosferici che corrispondono a quest'acquisizione.
     read_atmData(atmDataList, total_time);
-     //print_atmData(atmDataList); //sanity check
+    //print_atmData(atmDataList); //sanity check
 
     atmDataBins=interpolateAndBin(atmDataList, interval);
     //print_binnedData(atmDataBins);
 
-    //plotWeatherData(atmDataBins);
+    plotWeatherData(atmDataBins);
 
     std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
     plotCorrelationTemp(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
-    //plotCorrelationPress(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
-    //plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    //plotCorrTemp1d(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    plotCorrelationPress(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
+    TCanvas* canvasHum = new TCanvas("canvasHum", "Correlazione tra Umidità e Rates", 800, 600);
+    canvasHum->cd();
+    plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1], channelTimes[3], channelTimes[6]);
+    canvasHum->Update(); // Aggiorna per visualizzare il grafico
 
-    std::cout<<"Distribuzione poissoniana"<<std::endl;
+    std::cout << "Distribuzione poissoniana" << std::endl;
+
+    TCanvas* canvas06 = new TCanvas("canvas06", "Fit Poissoniano Telescopio 06", 800, 600);
+    canvas06->cd();
+    double rate06 = histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[1], "Conteggi06","Telescopio 06",kBlue + 2);
+    canvas06->Update();
+    canvas06->SaveAs("Risultati/Poisson06_3d.png");
+
+    //TCanvas* canvas08 = new TCanvas("canvas08", "Fit Poissoniano Telescopio 08", 800, 600);
+    //canvas08->cd();
+    double rate08 = histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[3], "Conteggi08","Telescopio 08",kRed + 2);
+    //canvas08->Update();
+    //canvas08->SaveAs("Risultati/Poisson08_3d.png");
+
+    //TCanvas* canvas04 = new TCanvas("canvas04", "Fit Poissoniano Telescopio 04", 800, 600);
+    //canvas04->cd();
+    double rate04=histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[6], "Conteggi04", "Telescopio 04",kGreen + 2);
+    //canvas04->Update();
+    //canvas04->SaveAs("Risultati/Poisson04_3d.png");
 
     std::cout<<"Distribuzione esponenziale"<<std::endl;
     
+    
     std::cout<<"Efficienza dei fotomoltiplicatori nel tempo"<<std::endl;
+
     return 0;
 }
