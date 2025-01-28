@@ -85,7 +85,7 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
                    rates_3, errors_3, time_intervals);
 
     // Crea il grafico del rate in funzione del tempo
-    TCanvas* c1 = new TCanvas("c1", "Rate degli eventi in funzione del tempo", 800, 600);
+    TCanvas* c1 = new TCanvas("c1", "Rate degli eventi in funzione del tempo", 1500, 1500);
 	c1->SetGrid(); 
     c1->Divide(1, 3); //colonne, righe
 	
@@ -119,8 +119,8 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
     pave->SetFillColor(kWhite);
     pave->SetBorderSize(1);
     pave->SetTextAlign(12);
-    pave->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_06, sigma_mean_rate_06));
-    pave->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_06, incertezza_sigma_06));
+    pave->AddText(Form("mean: %.2f #pm %.2f Hz", mean_rate_06, sigma_mean_rate_06));
+    pave->AddText(Form("std: %.2f #pm %.2f Hz", sigma_06, incertezza_sigma_06));
     pave->Draw();
     /*----------------------------------------------------------------------------------------------*/
 
@@ -155,8 +155,8 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
     pave2->SetFillColor(kWhite);
     pave2->SetBorderSize(1);
     pave2->SetTextAlign(12);
-    pave2->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_08, sigma_mean_rate_08));
-    pave2->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_08, incertezza_sigma_08));
+    pave2->AddText(Form("mean: %.2f #pm %.2f Hz", mean_rate_08, sigma_mean_rate_08));
+    pave2->AddText(Form("std: %.2f #pm %.2f Hz", sigma_08, incertezza_sigma_08));
     pave2->Draw();
     /*----------------------------------------------------------------------------------------------*/
 
@@ -191,8 +191,8 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
     pave3->SetFillColor(kWhite);
     pave3->SetBorderSize(1);
     pave3->SetTextAlign(12);
-    pave3->AddText(Form("Rate medio: %.2f #pm %.2f Hz", mean_rate_04, sigma_mean_rate_04 ));
-    pave3->AddText(Form("#sigma = %.2f #pm %.2f Hz", sigma_04, incertezza_sigma_04));
+    pave3->AddText(Form("mean: %.2f #pm %.2f Hz", mean_rate_04, sigma_mean_rate_04 ));
+    pave3->AddText(Form("std: %.2f #pm %.2f Hz", sigma_04, incertezza_sigma_04));
     pave3->Draw();
     /*----------------------------------------------------------------------------------------------*/
     // Calcola le fluttuazioni in percentuale
@@ -211,11 +211,12 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
 
     c1->Update();
     
-    //c1->SaveAs("Risultati/Rateneltempo_7d.png");
+    c1->SaveAs("Risultati/Rateneltempo_7d.png");
 } 
 
 // Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
-void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<double>& counts23, std::vector<double>& counts12, std::vector<double>& triple_06){
+void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<double>& counts23, std::vector<double>& counts12, 
+                    std::vector<double>& triple_06){
     // Vettori per memorizzare le efficienze e gli errori
     std::vector<double> eff1_acc(num_intervals_eff, 0);
     std::vector<double> eff3_acc(num_intervals_eff, 0);
@@ -292,7 +293,7 @@ void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<do
 }
 
 // Funzione per creare l'istogramma dei conteggi in un intervallo temporale fissato e fare il fit poissoniano
-double histogram_fitpoiss(double& interval,int& num_intervals,std::vector <double>& times){
+double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>& times,const char* hist_name, const char* title, Color_t color){
     // Vettore per memorizzare il conteggio degli eventi per ciascun intervallo
     std::vector<int> counts(num_intervals, 0);
 
@@ -306,7 +307,7 @@ double histogram_fitpoiss(double& interval,int& num_intervals,std::vector <doubl
 
     // Crea l'istogramma delle occorrenze dei conteggi
     int max_count = *std::max_element(counts.begin(), counts.end());
-    TH1F* hist = new TH1F("hist", "Occorrenze dei Conteggi in Intervalli di 10s", max_count + 1, 0, max_count + 1);
+    TH1F* hist = new TH1F(hist_name, title, max_count + 1, 0, max_count + 1);
 
     for (int count : counts) {
         hist->Fill(count);
@@ -316,7 +317,7 @@ double histogram_fitpoiss(double& interval,int& num_intervals,std::vector <doubl
     for (int i = 1; i <= hist->GetNbinsX(); ++i) {
         hist->SetBinError(i, std::sqrt(static_cast<double>(hist->GetBinContent(i))));
     }
-    hist->SetXTitle("Conteggi in 10s");
+    hist->SetXTitle("Conteggi in 1h");
     hist->SetYTitle("Occorrenze");
 
     // Definisci la funzione di fit poissoniana con due parametri liberi: N e μ
@@ -324,6 +325,7 @@ double histogram_fitpoiss(double& interval,int& num_intervals,std::vector <doubl
     poissonFit->SetParameters(1, hist->GetMean()); // Stima iniziale dei parametri
     poissonFit->SetParName(0, "N");  // Rinomina il parametro 0 a "N"
     poissonFit->SetParName(1, "#mu");
+    poissonFit->SetLineColor(color); // Imposta il colore della linea di fit
 
     // Fai il fit di likelihood
     hist->Fit(poissonFit, "L");
@@ -338,13 +340,13 @@ double histogram_fitpoiss(double& interval,int& num_intervals,std::vector <doubl
     std::cout << "P-value: " << p_value << std::endl;
 
     // Crea il canvas e disegna l'istogramma con il fit
-    TCanvas* c3 = new TCanvas("c3", "Fit Poissoniano dei Conteggi", 800, 600);
-    c3->cd(1);
+    TCanvas* canvaspoiss = new TCanvas("canvaspoiss", "Fit Poissoniano dei Conteggi", 800, 600);
+    canvaspoiss->cd(1);
     hist->Draw();
     poissonFit->Draw("same");
 
     // Mostra il canvas
-    c3->Update();
+    canvaspoiss->Update();
     
     // Estrazione del valore di best fit per mu
     double best_fit_rate = poissonFit->GetParameter("#mu")/static_cast<double>(10);

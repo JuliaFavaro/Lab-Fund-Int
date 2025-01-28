@@ -61,14 +61,14 @@ void calibration04() {
 	TGraphErrors* Counts2Graph2 = new TGraphErrors(n2);
 	TGraphErrors* Counts2Graph3 = new TGraphErrors(n3);
 
-	Counts2Graph1->SetTitle("Single Counts PMT1; Voltage (V); Counts per second [cps]"); 
-	Epsilon1_acc->SetTitle("Efficiency of PMT1 ; Voltage (V); Efficiency");
+	Counts2Graph1->SetTitle("Conteggi in singola PMT1; Voltaggio (V); Conteggi al secondo [cps]"); 
+	Epsilon1_acc->SetTitle("Efficienza PMT1 ; Voltaggio (V); Efficienza");
 
-	Counts2Graph2->SetTitle("Single Counts PMT2; Voltage (V); Counts per second [cps]"); 
-	Epsilon2_acc->SetTitle("Efficiency of PMT2 ; Voltage (V); Efficiency");
+	Counts2Graph2->SetTitle("Conteggi in singola PMT2; Voltaggio (V); Conteggi al secondo [cps]"); 
+	Epsilon2_acc->SetTitle("Efficienza PMT2 ; Voltaggio (V); Efficienza");
 
-	Counts2Graph3->SetTitle("Single Counts PMT3; Voltage (V); Counts per second [cps]"); 
-	Epsilon3_acc->SetTitle("Efficiency of PMT3; Voltage (V); Efficiency");
+	Counts2Graph3->SetTitle("Conteggi in singola PMT3; Voltaggio (V); Conteggi al secondo [cps]"); 
+	Epsilon3_acc->SetTitle("Efficienza PMT3; Voltaggio (V); Efficienza");
 
     double w = 40e-9; //soglia: -30.0 mV
     double w_min = 2e-9;
