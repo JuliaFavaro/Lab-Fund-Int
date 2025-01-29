@@ -300,35 +300,23 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
     graph3->SetLineColor(kGreen + 2); 
     graph3->Draw("AP");
 
-    
     // Esegui il fit lineare
     TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 14); // Sostituisci con l'intervallo appropriato
     
     // Impostazione dei parametri iniziali
     fitFunc->SetParameter(0, 11.3); // Intercetta iniziale
     fitFunc->SetParameter(1, +0.02); // Coefficiente angolare iniziale
+    
+    fitFunc->SetParName(0, "intercetta:");  // Rinomina il parametro 0 a "N"
+    fitFunc->SetParName(1, "coefficiente");
     graph3->Fit(fitFunc);
 
-
-    // Stampa i risultati del fit con incertezze
-    double slope = fitFunc->GetParameter(1);   // Coefficiente angolare
-    double intercept = fitFunc->GetParameter(0); // Intercetta
-    double slopeError = fitFunc->GetParError(1);   // Incertezza sul coefficiente angolare
-    double interceptError = fitFunc->GetParError(0); // Incertezza sull'intercetta
-
-    // Imposta la precisione a due cifre significative
-    std::cout << std::fixed << std::setprecision(2);
-    
-    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
-    TPaveText* pave1 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
-    pave1->SetFillColor(kWhite);
-    pave1->SetBorderSize(1);
-    pave1->SetTextAlign(14);
-    pave1->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/#circC", slope, slopeError));
-    pave1->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
-    pave1->Draw();
+    // Configura il box delle statistiche per mostrare ulteriori informazioni
+    gStyle->SetOptStat(1111); // Mostra Entries, Mean, Std Dev
+    gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF
 
     canvastemp->Update();
+    //canvastemp->SaveAs("Risultati/CorrTemp_3d.png");
 }
 
 void plotCorrTemp1d(const std::vector<BinnedData>& atmDataBins, double& interval, int& num_intervals, const std::vector<double>& t1,
@@ -440,27 +428,17 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
     // Impostazione dei parametri iniziali
     fitFunc->SetParameter(0, 11.10); // Intercetta iniziale
     fitFunc->SetParameter(1, -0.02); // Coefficiente angolare iniziale
+
+    fitFunc->SetParName(0, "intercetta:");  // Rinomina il parametro 0 a "N"
+    fitFunc->SetParName(1, "coefficiente");
     graph3->Fit(fitFunc);
 
-    // Stampa i risultati del fit con incertezze
-    double slope = fitFunc->GetParameter(1);   // Coefficiente angolare
-    double intercept = fitFunc->GetParameter(0); // Intercetta
-    double slopeError = fitFunc->GetParError(1);   // Incertezza sul coefficiente angolare
-    double interceptError = fitFunc->GetParError(0); // Incertezza sull'intercetta
-
-    // Imposta la precisione a due cifre significative
-    std::cout << std::fixed << std::setprecision(2);
+    // Configura il box delle statistiche per mostrare ulteriori informazioni
+    gStyle->SetOptStat(1111); // Mostra Entries, Mean, Std Dev
+    gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF
     
-    // Aggiungi media campionaria, deviazione standard e incertezza al grafico
-    TPaveText* pave2 = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
-    pave2->SetFillColor(kWhite);
-    pave2->SetBorderSize(1);
-    pave2->SetTextAlign(14);
-    pave2->AddText(Form("Coefficiente angolare: %.3f #pm %.3f Hz/mbar", slope, slopeError));
-    pave2->AddText(Form("Intercetta = %.2f #pm %.2f Hz", intercept, interceptError));
-    pave2->Draw();
-
     canvaspress->Update();
+    //canvaspress->SaveAs("Risultati/CorrPress_3d.png");
 }
 
 // Funzione per tracciare il grafico di correlazione (umiditàr)
@@ -491,13 +469,15 @@ void plotCorrelationHum(const std::vector<BinnedData>& atmDataBins, double& inte
     TCanvas* canvashum = new TCanvas("canvashum", "Correlazione tra Umidità e Rates", 800, 600);
 	canvashum->SetGrid(); 
 
-    graph3->SetTitle("Setup04 e Umidita;Umidita (%);Rate (Hz)"); 
+    graph3->SetTitle("Setup04 e Umidita'; Umidita' (%);Rate (Hz)"); 
     graph3->SetMarkerStyle(8); 
     graph3->SetMarkerSize(1);
     graph3->SetMarkerColor(kGreen + 2);
     graph3->SetLineColor(kGreen + 2); //serve per avere lo stesso colore anche nelle barre di errore
     graph3->Draw("AP");
     canvashum->Update();
+    
+    //canvashum->SaveAs("Risultati/CorrHum_3d.png");
 }
 
 // Funzione per tracciare parametri atmosferici in funzione del tempo
@@ -540,12 +520,12 @@ void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
 
     canvasatm->cd(3);
     TGraph* graphhum= new TGraph(hours.size(), hours.data(), hum.data());
-    graphhum->SetTitle("Umidita;Tempo (h);Umidita (%)"); 
+    graphhum->SetTitle("Umidita';Tempo (h);Umidita' (%)"); 
     graphhum->SetMarkerStyle(22); 
     graphhum->SetMarkerSize(1);
     graphhum->Draw("APL");   
 
-    canvasatm->SaveAs("Risultati/Atm_7d.png");
+    //canvasatm->SaveAs("Risultati/Atm_7d.png");
     return;
 }
 
