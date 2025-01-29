@@ -211,7 +211,7 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
 
     c1->Update();
     
-    c1->SaveAs("Risultati/Rateneltempo_7d.png");
+    //c1->SaveAs("Risultati/Rateneltempo_7d.png");
 } 
 
 // Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
@@ -293,7 +293,7 @@ void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<do
 }
 
 // Funzione per creare l'istogramma dei conteggi in un intervallo temporale fissato e fare il fit poissoniano
-double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>& times,const char* hist_name, const char* title, Color_t color){
+double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>& times,const char* hist_name, const char* title, Color_t color, int correction=0){
     // Vettore per memorizzare il conteggio degli eventi per ciascun intervallo
     std::vector<int> counts(num_intervals, 0);
 
@@ -302,6 +302,21 @@ double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>
         int bin = static_cast<int>(t / interval);
         if (bin < num_intervals) {
             counts[bin]++;
+        }
+    }
+    
+    double accidental_rate = 0.368; // Hz
+    double expected_accidentals = accidental_rate * interval;
+
+    // Calcolo delle coincidenze accidentali
+    if (correction > 0) {
+        for (int i = 0; i < num_intervals; ++i) {
+            std::cout<<counts[i]<<std::endl;
+            if (counts[i] > expected_accidentals) {
+                counts[i] -=expected_accidentals;
+            } else {
+                counts[i] = 0; // Imposta a zero se il conteggio è minore o uguale
+            }
         }
     }
 
@@ -317,7 +332,7 @@ double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>
     for (int i = 1; i <= hist->GetNbinsX(); ++i) {
         hist->SetBinError(i, std::sqrt(static_cast<double>(hist->GetBinContent(i))));
     }
-    hist->SetXTitle("Conteggi in 1h");
+    hist->SetXTitle("Conteggi in 10 s");
     hist->SetYTitle("Occorrenze");
 
     // Definisci la funzione di fit poissoniana con due parametri liberi: N e μ
@@ -333,11 +348,11 @@ double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>
     gStyle->SetOptStat(1111); // Mostra Entries, Mean, Std Dev
     gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF, Prob, N e λ
 
-    // Calcola il chi quadro e il p-value
-    double chi2 = poissonFit->GetChisquare();
-    double ndf = poissonFit->GetNDF();
-    double p_value = 1 - TMath::Prob(chi2, ndf);
-    std::cout << "P-value: " << p_value << std::endl;
+    double mu = poissonFit->GetParameter(1);
+    double muError = poissonFit->GetParError(1);
+    // Stampa mu con 5 cifre significative
+    std::cout << std::fixed << std::setprecision(5);
+    std::cout << "Valore di mu: " << mu << " ± " << muError << std::endl;
 
     // Crea il canvas e disegna l'istogramma con il fit
     TCanvas* canvaspoiss = new TCanvas("canvaspoiss", "Fit Poissoniano dei Conteggi", 800, 600);
@@ -350,12 +365,13 @@ double histogram_fitpoiss(double interval,int num_intervals,std::vector <double>
     
     // Estrazione del valore di best fit per mu
     double best_fit_rate = poissonFit->GetParameter("#mu")/static_cast<double>(10);
-    std::cout << "Valore di best fit per mu: " << best_fit_rate << std::endl;
+    double sigma_best_fit_rate=poissonFit->GetParError(1)/static_cast<double>(10);
+    std::cout << "Valore di best fit per il rate: " << best_fit_rate << " +- "<< sigma_best_fit_rate<<" Hz"<< std::endl;
     return best_fit_rate;
 }
 
 // Funzione per creare l'istogramma degli intervalli di tempo e fare il fit esponenziale
-void histogram_fitexponential(std::vector<double>& times, const double& guess_rate) {
+void histogram_fitexponential(std::vector<double>& times, const double& guess_rate, const char* hist_name, const char* title, Color_t color, int correction=0) {
     // Calcolo delle differenze tra i tempi
     std::vector<double> time_differences;
     for (size_t i = 1; i < times.size(); ++i) {
@@ -363,32 +379,47 @@ void histogram_fitexponential(std::vector<double>& times, const double& guess_ra
     }
 
     // Creazione dell'istogramma con 100 bins equispaziati
-    TH1F* h1 = new TH1F("h1", "Differenze tra i tempi del telescopio 04;Differenza di Tempo (s);Conteggi", 100, 0, *std::max_element(time_differences.begin(), time_differences.end()));
+    TH1F* h1 = new TH1F(hist_name, title, 100, 0, *std::max_element(time_differences.begin(), time_differences.end()));
+
+    // Calcolo delle coincidenze accidentali
+    double Nd_acc = calculate_double_accidental_counts(); // Implementa questa funzione
+    double Nt_acc = calculate_triple_accidental_counts(Nd_acc); // Implementa questa funzione
 
     // Riempimento dell'istogramma con le differenze tra i tempi
     for (double t_diff : time_differences) {
-        h1->Fill(t_diff);
+        if (t_diff > 0) { // Considera solo valori positivi
+            h1->Fill(t_diff);
+        }
     }
+
+    // Sottrazione delle coincidenze accidentali
+    for (int bin = 1; bin <= h1->GetNbinsX(); ++bin) {
+        double count = h1->GetBinContent(bin);
+        h1->SetBinContent(bin, count - Nd_acc); // Sottrai le coincidenze accidentali
+    }
+
+    h1->SetXTitle("Differenza di tempo (s)");
+    h1->SetYTitle("Conteggi");
 
     // Creazione della funzione esponenziale per il fit
     TF1* expFit = new TF1("expFit", "[0]*exp(-x*[1])", 0, *std::max_element(time_differences.begin(), time_differences.end()));
-    expFit->SetParName(0, "N");  // Rinomina il parametro 0 a "N"
-    expFit->SetParName(1, "#lambda");  // Rinomina il parametro 1 a "Lambda"
-    expFit->SetParameters(270e3, guess_rate); // Imposta valori iniziali per i parametri del fit: N e lambda
-
+    expFit->SetParName(0, "N");
+    expFit->SetParName(1, "#lambda");
+    expFit->SetParameters(270e3, guess_rate);
 
     // Esecuzione del fit esponenziale con il metodo di Likelihood
     h1->Fit("expFit", "L");
 
-    // Configura il box delle statistiche per mostrare ulteriori informazioni
-    gStyle->SetOptStat(1111); // Mostra Entries, Mean, Std Dev
-    gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF, Prob, N e λ
+    // Configura il box delle statistiche
+    gStyle->SetOptStat(1111);
+    gStyle->SetOptFit(1011);
 
     // Creazione del canvas e disegno dell'istogramma con il fit
     TCanvas* c4 = new TCanvas("c4", "Istogramma delle differenze tra i tempi (singolo telescopio)", 800, 600);
     c4->cd(1);
     h1->Draw();
     expFit->Draw("same");
+    expFit->SetLineColor(color);
     c4->Update();
 }
 
