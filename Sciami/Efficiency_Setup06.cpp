@@ -6,6 +6,8 @@
 #include <TGraphErrors.h>
 #include <TMath.h>
 
+#include "read_data10.h"
+
 double sigma_eff(double nt, double nd, double ndacc, double n1, double n2, double time, double ntacc){
     double epsilon=nt/(nd-ndacc-ntacc); //binomial normal efficiency 
     double sigma_nt=sqrt(nd*epsilon*(1-epsilon));
@@ -18,6 +20,7 @@ double sigma_eff(double nt, double nd, double ndacc, double n1, double n2, doubl
     double sigma_eff=sqrt(pow(term1,2)+pow(term2,2));
     return sigma_eff;
 }
+
 
 void calibration06() {
     // Length of the arrays for efficiency estimation
@@ -184,4 +187,178 @@ void calibration06() {
     Epsilon3_acc->Draw("AP");
     c1->SaveAs("Risultati/Puntilavoro_06.png");
 
+}
+
+// Funzione per calcolare i rates e gli errori
+void CalculateRates(double interval, int num_intervals, const std::vector<double>& t1,
+                    const std::vector<double>& t2, const std::vector<double>& t3,
+                    std::vector<double>& rates_1, std::vector<double>& errors_1,
+                    std::vector<double>& rates_2, std::vector<double>& errors_2,
+                    std::vector<double>& rates_3, std::vector<double>& errors_3,
+                    std::vector<double>& time_intervals) {
+    
+    for (int i = 0; i < num_intervals; ++i) {
+        double start_time = i * interval;
+        double end_time = start_time + interval;
+
+        // Calcola il tempo medio dell'intervallo per il grafico finale
+        time_intervals[i] = ((start_time + end_time) / 3600) / 2; // in ore
+
+        int count_1 = std::count_if(t1.begin(), t1.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        int count_2 = std::count_if(t2.begin(), t2.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        int count_3 = std::count_if(t3.begin(), t3.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        // Calcola il rate come numero di eventi diviso per la larghezza dell'intervallo
+        rates_1[i] = count_1 / interval;
+        errors_1[i] = sqrt(count_1) / interval;
+        rates_2[i] = count_2 / interval - 367e-3; // Correggere per il rumore di fondo (367 mHz)
+        errors_2[i] = sqrt(count_2) / interval + sqrt(pow(2e-3, 2));
+        rates_3[i] = count_3 / interval;
+        errors_3[i] = sqrt(count_3) / interval;
+    }
+}
+
+
+// Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
+void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<double>& counts23, std::vector<double>& counts12, 
+                    std::vector<double>& triple_06){
+    // Vettori per memorizzare le efficienze e gli errori
+    std::vector<double> eff1_acc(num_intervals_eff, 0);
+    std::vector<double> eff3_acc(num_intervals_eff, 0);
+    std::vector<double> eff1_err(num_intervals_eff, 0);
+    std::vector<double> eff3_err(num_intervals_eff, 0);
+    std::vector<double> time_intervals(num_intervals_eff, 0);
+
+    // Calcola l'efficienza in funzione del tempo
+    for (int i = 0; i < num_intervals_eff; ++i) {
+        double start_time = i * interval_eff;
+        double end_time = start_time + interval_eff;
+
+        // Calcola i conteggi per ciascun intervallo
+        double count_triple = std::count_if(triple_06.begin(), triple_06.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+        double count_double23 = std::count_if(counts23.begin(), counts23.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+        double count_double12 = std::count_if(counts12.begin(), counts12.end(), [start_time, end_time](double t) {
+            return t > start_time && t < end_time;
+        });
+
+        // Calcola le efficienze
+        eff1_acc[i] = count_triple / (count_double23);
+        eff1_err[i] = std::sqrt((eff1_acc[i] * (1 - eff1_acc[i])) / count_double23);
+        eff3_acc[i] = count_triple / (count_double12);
+        eff3_err[i] = std::sqrt((eff3_acc[i] * (1 - eff3_acc[i])) / count_double12);
+        time_intervals[i] = (start_time + end_time) / 2.0/3600;
+    }
+
+    // Crea il grafico dell'efficienza in funzione del tempo
+    TCanvas* ceff = new TCanvas("ceff", "Efficienza PMT1", 800, 600);
+    ceff->SetGrid();
+
+    TGraphErrors* graph_eff1 = new TGraphErrors(num_intervals_eff, time_intervals.data(), eff1_acc.data(), nullptr, eff1_err.data());
+    graph_eff1->SetTitle("Efficienza PMT1;Tempo (h);Efficienza");
+    graph_eff1->SetMarkerStyle(20);
+    graph_eff1->SetMarkerColor(kBlue + 2);
+    graph_eff1->SetLineColor(kBlue + 2);
+    graph_eff1->Draw("AP");
+    
+    // Fit lineare per Efficienza PMT1
+    TF1* lin_fit1 = new TF1("lin_fit1", "[0] + [1]*x", 0, *std::max_element(time_intervals.begin(), time_intervals.end()));
+    lin_fit1->SetParName(0, "cost");  
+    lin_fit1->SetParName(1, "coeff. ang.");  
+    
+    graph_eff1->Fit("lin_fit1", "L");
+    lin_fit1->SetLineColor(kBlue + 5);
+
+    // Estrai parametri dal fit
+    double intercept = lin_fit1->GetParameter(0);
+    double intercept_err = lin_fit1->GetParError(0);
+    double slope = lin_fit1->GetParameter(1);
+    double slope_err = lin_fit1->GetParError(1);
+    
+    // Calcola chi-quadro ridotto
+    double chi_square = lin_fit1->GetChisquare();
+    int ndf = num_intervals_eff - lin_fit1->GetNpar(); // numero di gradi di libertà
+    double reduced_chi_square = chi_square / ndf;
+
+    // Calcola la fluttuazione percentuale delle efficienze
+    double mean_efficiency = std::accumulate(eff1_acc.begin(), eff1_acc.end(), 0.0) / num_intervals_eff;
+    std::cout<<mean_efficiency<<std::endl;
+    
+    double sum_squared_diff = std::accumulate(eff1_acc.begin(), eff1_acc.end(), 0.0,
+        [mean_efficiency](double sum, double value) {
+            return sum + (value - mean_efficiency) * (value - mean_efficiency);
+        });
+    
+    double std_dev = std::sqrt(sum_squared_diff / num_intervals_eff);
+    
+    // Fluttuazione percentuale
+    double percent_fluctuation = (std_dev / mean_efficiency) * 100;
+    std::cout << "Fluttuazione percentuale delle efficienze: " << percent_fluctuation << "%" << std::endl;
+
+    // Aggiungi informazioni al riquadro
+    TPaveText* pave = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave->SetFillColor(kWhite);
+    pave->SetBorderSize(1);
+    
+    pave->AddText(Form("Intercept: %.3f #pm %.3f Hz", intercept, intercept_err));
+    pave->AddText(Form("Slope: (%.f #pm %.f) * 10^{-5} Hz", slope*1e5, slope_err*1e5));
+    pave->AddText(Form("#chi^{2}/ndf: %.f", reduced_chi_square));
+
+    pave->Draw();
+    ceff->Update();
+}
+
+int acquisizione7giorni() {
+    std::cout<<"Inizio"<<std::endl;
+
+    // Nome del file di input
+    std::string filename = "Dati/FIFOread_20241213-091357_7day.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
+
+    // Vettori per memorizzare i numeri dei canali e i tempi del file
+    std::vector<int> decimalNumbers;
+    std::vector<double> counts;
+    readData(filename, decimalNumbers, counts);
+
+    // Sistema i tempi con i reset
+    std::vector<int> Numbers;
+    std::vector<double> tempi;
+    reset_clock(decimalNumbers, counts, Numbers, tempi);
+
+    // Vettore di vettori per memorizzare i tempi di arrivo per ciascun canale
+    std::vector<std::vector<double>> channelTimes(7);
+
+    // Processa ciascun numero decimale per determinare i canali attivati
+    for (size_t i = 0; i < decimalNumbers.size(); ++i) {
+        int Number = Numbers[i];
+        std::vector<int> activeChannels = getActiveChannels(Number);
+
+        // Aggiungi il tempo corrispondente ai canali attivati
+        for (int channel : activeChannels) {
+            channelTimes[channel].push_back(tempi[i]);
+        }
+    }
+
+    // Calcola il tempo totale di acquisizione
+    double time_start_total = *std::min_element(tempi.begin(), tempi.end());
+    double time_end_total = *std::max_element(tempi.begin(), tempi.end());
+    double total_time = time_end_total - time_start_total; //secondi
+    std::cout << "Tempo totale in ore: " << total_time / (3600) << std::endl;
+
+    double interval = 3600; 
+    int num_intervals=static_cast<int>(total_time / interval);
+
+    efficiency_set06(interval, num_intervals,channelTimes[0], channelTimes[1], channelTimes[2]);
+
+    return 0;
 }
