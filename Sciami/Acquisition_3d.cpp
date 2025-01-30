@@ -60,36 +60,24 @@ int acquisizione3giorni() {
     è il Setup08, mentre il canale 7 è il telescopio in Stanza2004.*/
     double interval = 3600; //1 ora
     int num_intervals=static_cast<int>(total_time / interval);
-    Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
+    //Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
 
     std::cout << "Distribuzione poissoniana" << std::endl;
 
-    double rate06 = histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[1], "Conteggi06","Telescopio 06",kBlue + 2);
-    //canvas06->SaveAs("Risultati/Poisson06_3d.png");
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[1], "Conteggi06","Telescopio 06",kBlue + 2);
 
-    double rate08 = histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[3], "Conteggi08","Telescopio 08",kRed + 2,1);
-    //canvas08->SaveAs("Risultati/Poisson08_3d.png");
+    //1 indica che voglio che avvenga una correzione per i conteggi accidentali
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[3], "Conteggi08","Telescopio 08",kRed + 2,1); 
 
-    double rate04=histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[6], "Conteggi04", "Telescopio 04",kGreen + 2);
-    //canvas04->SaveAs("Risultati/Poisson04_3d.png");
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[6], "Conteggi04", "Telescopio 04",kGreen + 2);
 
     std::cout<<"Distribuzione esponenziale"<<std::endl;
 
-    // Inizializzazione e utilizzo di canvas06
-    TCanvas* canvas06 = new TCanvas("canvas06", "Fit esponenziale Telescopio 06", 800, 600);
-    canvas06->cd();
-    histogram_fitexponential(channelTimes[1], rate06,"Dt Setup06","Telescopio 06",kBlue + 2);
-    canvas06->Update();
+    //histogram_fitexponential(channelTimes[1],"Dt Setup06","Telescopio 06",kBlue + 2);
 
-    TCanvas* canvas08 = new TCanvas("canvas08", "Fit esponenziale Telescopio 08", 800, 600);
-    canvas08->cd();
-    histogram_fitexponential(channelTimes[3], rate08,"Dt Setup08","Telescopio 08",kRed + 2,1);
-    canvas08->Update();
+    histogram_fitexponential(channelTimes[3],"Dt Setup08","Telescopio 08",kRed + 2, 1);
 
-    TCanvas* canvas04 = new TCanvas("canvas04", "Fit esponenziale Telescopio 04", 800, 600);
-    canvas04->cd();
-    histogram_fitexponential(channelTimes[6], rate04,"Dt Setup04","Telescopio 04",kGreen + 2);
-    canvas04->Update();
+    //histogram_fitexponential(channelTimes[6],"Dt Setup04","Telescopio 04",kGreen + 2);
 
     std::cout<<"Efficienza dei fotomoltiplicatori nel tempo"<<std::endl;
 
