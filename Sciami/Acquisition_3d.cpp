@@ -60,7 +60,7 @@ int acquisizione3giorni() {
     è il Setup08, mentre il canale 7 è il telescopio in Stanza2004.*/
     double interval = 3600; //1 ora
     int num_intervals=static_cast<int>(total_time / interval);
-    //Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
+    Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
 
     std::cout << "Distribuzione poissoniana" << std::endl;
 

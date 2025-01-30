@@ -71,14 +71,13 @@ int acquisizione7giorni() {
     //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[6], "Conteggi04", "Telescopio 04",kGreen + 2);
     
     std::cout << "Distribuzione esponenziale" << std::endl;
-    
+
     //histogram_fitexponential(channelTimes[1],"Dt Setup06","Telescopio 06",kBlue + 2);
 
     //histogram_fitexponential(channelTimes[3],"Dt Setup08","Telescopio 08",kRed + 2,1);
 
     //histogram_fitexponential(channelTimes[6], "Dt Setup04","Telescopio 04",kGreen + 2);
 
-/*
     // Vettore di AtmData per memorizzare i dati atmosferici
     std::vector<AtmData> atmDataList;
     //effettivi dati atmosferici utilizzati per l'operazione di correlazione

@@ -211,86 +211,8 @@ void Rategraph3(double& interval, int& num_intervals, const std::vector<double>&
 
     c1->Update();
     
-    //c1->SaveAs("Risultati/Rateneltempo_7d.pdf");
+    c1->SaveAs("Risultati/Rateneltempo_7d.pdf");
 } 
-
-// Monitoraggio in funzione del tempo dell'efficienza dei PMT del Telescopio06 con fit lineare
-void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<double>& counts23, std::vector<double>& counts12, 
-                    std::vector<double>& triple_06){
-    // Vettori per memorizzare le efficienze e gli errori
-    std::vector<double> eff1_acc(num_intervals_eff, 0);
-    std::vector<double> eff3_acc(num_intervals_eff, 0);
-    std::vector<double> eff1_err(num_intervals_eff, 0);
-    std::vector<double> eff3_err(num_intervals_eff, 0);
-    std::vector<double> time_intervals(num_intervals_eff, 0);
-
-    double w = 20e-9; // soglia: -30.0 mV
-    double w_min = 2e-9;
-    // Calcola le accidentali
-    double acc23 = interval_eff * 118 * 370 * ((2 * w) - (2 * w_min));
-    double acc12 = interval_eff* 100 * 118 * ((2 * w) - (2 * w_min));
-    double acc123 = interval_eff * 103 * (acc23 / 30) * ((2 * w) - (2 * w_min));
-
-    // Calcola l'efficienza in funzione del tempo
-    for (int i = 0; i < num_intervals_eff; ++i) {
-        double start_time = i * interval_eff;
-        double end_time = start_time + interval_eff;
-
-        // Calcola i conteggi per ciascun intervallo
-        double count_triple = std::count_if(triple_06.begin(), triple_06.end(), [start_time, end_time](double t) {
-            return t >= start_time && t < end_time;
-        });
-        double count_double23 = std::count_if(counts23.begin(), counts23.end(), [start_time, end_time](double t) {
-            return t >= start_time && t < end_time;
-        });
-        double count_double12 = std::count_if(counts12.begin(), counts12.end(), [start_time, end_time](double t) {
-            return t >= start_time && t < end_time;
-        });
-
-        // Calcola le efficienze
-        eff1_acc[i] = count_triple / (count_double23 - acc23 - acc123);
-        eff1_err[i] = std::sqrt((eff1_acc[i] * (1 - eff1_acc[i])) / count_double23);
-        eff3_acc[i] = count_triple / (count_double12 - acc12 - acc123);
-        eff3_err[i] = std::sqrt((eff3_acc[i] * (1 - eff3_acc[i])) / count_double12);
-        time_intervals[i] = (start_time + end_time) / 2.0/3600;
-    }
-
-    // Crea il grafico dell'efficienza in funzione del tempo
-    TCanvas* c2 = new TCanvas("c2", "Efficienza PMT1 e PMT3 nel tempo", 800, 600);
-    c2->SetGrid();
-    c2->Divide(1, 2); // colonne, righe
-
-    // Efficienza PMT1
-    c2->cd(1);
-    TGraphErrors* graph_eff1 = new TGraphErrors(num_intervals_eff, time_intervals.data(), eff1_acc.data(), nullptr, eff1_err.data());
-    graph_eff1->SetTitle("Efficienza PMT1;Tempo (h);Efficienza");
-    graph_eff1->SetMarkerStyle(20);
-    graph_eff1->SetMarkerColor(kRed + 2);
-    graph_eff1->SetLineColor(kRed + 2);
-    graph_eff1->Draw("AP");
-    
-    // Fit lineare per Efficienza PMT1
-    TF1* lin_fit1 = new TF1("lin_fit1", "[0] + [1]*x", 0, *std::max_element(time_intervals.begin(), time_intervals.end()));
-    lin_fit1->SetParName(0, "cost");  
-    lin_fit1->SetParName(1, "coeff. ang.");  
-    graph_eff1->Fit("lin_fit1", "R");
-
-    // Efficienza PMT3
-    c2->cd(2);
-    TGraphErrors* graph_eff3 = new TGraphErrors(num_intervals_eff, time_intervals.data(), eff3_acc.data(), nullptr, eff3_err.data());
-    graph_eff3->SetTitle("Efficienza PMT3;Tempo (h);Efficienza");
-    graph_eff3->SetMarkerStyle(21);
-    graph_eff3->SetMarkerColor(kRed + 2);
-    graph_eff3->SetLineColor(kRed + 2);
-    graph_eff3->Draw("AP");
-    
-    // Fit lineare per Efficienza PMT3
-    TF1* lin_fit3 = new TF1("lin_fit3", "[0] + [1]*x", 0, *std::max_element(time_intervals.begin(), time_intervals.end()));
-    lin_fit3->SetParName(0, "cost");  
-    lin_fit3->SetParName(1, "coeff. ang.");  
-    graph_eff3->Fit("lin_fit3", "R");
-    c2->Update();
-}
 
 // Funzione per creare l'istogramma dei conteggi in un intervallo temporale fissato e fare il fit poissoniano
 void histogram_fitpoiss(double interval,int num_intervals,std::vector <double>& times,const char* hist_name, const char* title, Color_t color, int correction=0){
