@@ -508,7 +508,10 @@ void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
     graphtemp->SetTitle("Temperatura;Tempo (h);Temperatura (#circC)"); 
     graphtemp->SetMarkerStyle(20); 
     graphtemp->SetMarkerSize(1);
-    graphtemp->Draw("APL"); 
+    graphtemp->Draw("APL");     
+    
+    graphtemp->GetXaxis()->SetTitleSize(0.05); // Imposta la dimensione del font dell'asse X
+    graphtemp->GetYaxis()->SetTitleSize(0.05); // Imposta la dimensione del font dell'asse Y
 
     canvasatm->cd(2);
     TGraph* graphpress= new TGraph(hours.size(), hours.data(), DP.data());
@@ -516,13 +519,18 @@ void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
     graphpress->SetMarkerStyle(21); 
     graphpress->SetMarkerSize(1);
     graphpress->Draw("APL"); 
+    graphpress->GetXaxis()->SetTitleSize(0.05); 
+    graphpress->GetYaxis()->SetTitleSize(0.05); 
 
     canvasatm->cd(3);
     TGraph* graphhum= new TGraph(hours.size(), hours.data(), hum.data());
     graphhum->SetTitle("Umidita';Tempo (h);Umidita' (%)"); 
     graphhum->SetMarkerStyle(22); 
     graphhum->SetMarkerSize(1);
-    graphhum->Draw("APL");   
+    graphhum->Draw("APL");  
+
+    graphhum->GetXaxis()->SetTitleSize(0.05);
+    graphhum->GetYaxis()->SetTitleSize(0.05);
 
     canvasatm->SaveAs("Risultati/Atm_7d.pdf");
     return;

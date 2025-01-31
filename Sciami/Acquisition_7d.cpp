@@ -91,6 +91,8 @@ int acquisizione7giorni() {
     atmDataBins=interpolateAndBin(atmDataList, interval);
         //print_binnedData(atmDataBins);
 
+    plotWeatherData(atmDataBins);
+    /*
     std::cout<<"Correlazione tra parametri atmosferici e rate "<<std::endl;
     plotCorrelationTemp(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
     //plotCorrTemp1d(atmDataBins, interval, num_intervals, channelTimes[1],channelTimes[3], channelTimes[6]);
@@ -98,7 +100,7 @@ int acquisizione7giorni() {
     TCanvas* canvasHum = new TCanvas("canvasHum", "Correlazione tra Umidità e Rates", 800, 600);
     canvasHum->cd();
     plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1], channelTimes[3], channelTimes[6]);
-    canvasHum->Update(); // Aggiorna per visualizzare il grafico*/
+    canvasHum->Update(); // */
 
     return 0;
 }
