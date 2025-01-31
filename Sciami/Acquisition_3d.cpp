@@ -60,7 +60,7 @@ int acquisizione3giorni() {
     è il Setup08, mentre il canale 7 è il telescopio in Stanza2004.*/
     double interval = 3600; //1 ora
     int num_intervals=static_cast<int>(total_time / interval);
-    Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
+    //Rategraph3(interval,num_intervals,channelTimes[1],channelTimes[3], channelTimes[6]);
 
     std::cout << "Distribuzione poissoniana" << std::endl;
 
@@ -75,13 +75,12 @@ int acquisizione3giorni() {
 
     //histogram_fitexponential(channelTimes[1],"Dt Setup06","Telescopio 06",kBlue + 2);
 
-    histogram_fitexponential(channelTimes[3],"Dt Setup08","Telescopio 08",kRed + 2, 1);
+    //histogram_fitexponential(channelTimes[3],"Dt Setup08","Telescopio 08",kRed + 2, 1);
 
     //histogram_fitexponential(channelTimes[6],"Dt Setup04","Telescopio 04",kGreen + 2);
 
     std::cout<<"Efficienza dei fotomoltiplicatori nel tempo"<<std::endl;
 
-    /*
     // Vettore di AtmData per memorizzare i dati atmosferici
     std::vector<AtmData> atmDataList;
     //effettivi dati atmosferici utilizzati per l'operazione di correlazione
@@ -105,8 +104,6 @@ int acquisizione3giorni() {
     canvasHum->cd();
     plotCorrelationHum(atmDataBins, interval, num_intervals, channelTimes[1], channelTimes[3], channelTimes[6]);
     canvasHum->Update(); // Aggiorna per visualizzare il grafico
-    
-    */
 
     return 0;
 }
