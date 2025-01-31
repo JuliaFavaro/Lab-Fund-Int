@@ -290,8 +290,7 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
         }
     }
 
-    TCanvas* canvastemp = new TCanvas("canvastemp", "Correlazione tra Temperatura Atmosferica e Rates", 800, 600);
-	canvastemp->SetGrid(); 
+    TCanvas* canvastemp = new TCanvas("canvastemp", "Correlazione tra Temperatura Atmosferica e Rates", 1000, 800);
 
     graph3->SetTitle("Setup04 e Temperatura;Temperatura (#circC);Rate (Hz)"); 
     graph3->SetMarkerStyle(8); 
@@ -300,6 +299,7 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
     graph3->SetLineColor(kGreen + 2); 
     graph3->Draw("AP");
 
+    /*
     // Esegui il fit lineare
     TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 14); // Sostituisci con l'intervallo appropriato
     
@@ -314,9 +314,10 @@ void plotCorrelationTemp(const std::vector<BinnedData>& atmDataBins, double& int
     // Configura il box delle statistiche per mostrare ulteriori informazioni
     gStyle->SetOptStat(1111); // Mostra Entries, Mean, Std Dev
     gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF
+    */
 
     canvastemp->Update();
-    //canvastemp->SaveAs("Risultati/CorrTemp_3d.png");
+    canvastemp->SaveAs("Risultati/CorrTemp_7d.pdf");
 }
 
 void plotCorrTemp1d(const std::vector<BinnedData>& atmDataBins, double& interval, int& num_intervals, const std::vector<double>& t1,
@@ -412,8 +413,7 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
         graph3->SetPointError(i, 0, errors_3[i]);
     }
 
-    TCanvas* canvaspress = new TCanvas("canvaspress", "Correlazione tra Pressione Atmosferica e Rates", 800, 600);
-	canvaspress->SetGrid(); 
+    TCanvas* canvaspress = new TCanvas("canvaspress", "Correlazione tra Pressione Atmosferica e Rates", 1000, 800);
 
     graph3->SetTitle("Setup04 e Pressione;Pressione (mbar);Rate (Hz)"); 
     graph3->SetMarkerStyle(8); 
@@ -438,7 +438,7 @@ void plotCorrelationPress(const std::vector<BinnedData>& atmDataBins, double& in
     gStyle->SetOptFit(1111);  // Mostra i risultati del fit inclusi Chi^2/NDF
     
     canvaspress->Update();
-    //canvaspress->SaveAs("Risultati/CorrPress_3d.png");
+    canvaspress->SaveAs("Risultati/CorrPress_7d.pdf");
 }
 
 // Funzione per tracciare il grafico di correlazione (umiditàr)
@@ -466,8 +466,7 @@ void plotCorrelationHum(const std::vector<BinnedData>& atmDataBins, double& inte
         graph3->SetPointError(i, 0, errors_3[i]);
     }
 
-    TCanvas* canvashum = new TCanvas("canvashum", "Correlazione tra Umidità e Rates", 800, 600);
-	canvashum->SetGrid(); 
+    TCanvas* canvashum = new TCanvas("canvashum", "Correlazione tra Umidità e Rates", 1000, 800);
 
     graph3->SetTitle("Setup04 e Umidita'; Umidita' (%);Rate (Hz)"); 
     graph3->SetMarkerStyle(8); 
@@ -477,7 +476,7 @@ void plotCorrelationHum(const std::vector<BinnedData>& atmDataBins, double& inte
     graph3->Draw("AP");
     canvashum->Update();
     
-    //canvashum->SaveAs("Risultati/CorrHum_3d.png");
+    canvashum->SaveAs("Risultati/CorrHum_7d.pdf");
 }
 
 // Funzione per tracciare parametri atmosferici in funzione del tempo
@@ -525,7 +524,7 @@ void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
     graphhum->SetMarkerSize(1);
     graphhum->Draw("APL");   
 
-    //canvasatm->SaveAs("Risultati/Atm_7d.png");
+    canvasatm->SaveAs("Risultati/Atm_7d.pdf");
     return;
 }
 

@@ -263,7 +263,6 @@ void efficiency_set06(double& interval_eff,int& num_intervals_eff,std::vector<do
 
     // Crea il grafico dell'efficienza in funzione del tempo
     TCanvas* ceff = new TCanvas("ceff", "Efficienza PMT1", 800, 600);
-    ceff->SetGrid();
 
     TGraphErrors* graph_eff1 = new TGraphErrors(num_intervals_eff, time_intervals.data(), eff1_acc.data(), nullptr, eff1_err.data());
     graph_eff1->SetTitle("Efficienza PMT1;Tempo (h);Efficienza");
