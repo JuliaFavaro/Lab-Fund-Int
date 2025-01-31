@@ -336,6 +336,7 @@ void histogram_fitexponential(std::vector<double>& times, const char* hist_name,
     h1->SetXTitle("Differenza di tempo (s)");
     h1->SetYTitle("Conteggi");
 
+    /*
     // Creazione della funzione esponenziale per il fit
     TF1* expFit = new TF1("expFit", "[0]*exp(-x*[1])", 0, max_time_diff);
     expFit->SetParName(0, "N");
@@ -354,7 +355,7 @@ void histogram_fitexponential(std::vector<double>& times, const char* hist_name,
 
     // Configura il box delle statistiche
     gStyle->SetOptStat(1111);
-    gStyle->SetOptFit(1011);
+    gStyle->SetOptFit(1011);*/
 
     
     // Creazione del canvas e disegno dell'istogramma con il fit
@@ -363,14 +364,111 @@ void histogram_fitexponential(std::vector<double>& times, const char* hist_name,
     canvasexp->SetLogy();
     canvasexp->cd(1);
     h1->Draw();
-    expFit->Draw("same");
-    expFit->SetLineColor(color);
+    //expFit->Draw("same");
+    //expFit->SetLineColor(color);
     canvasexp->Update();
-
+    
+    /*
     double best_fit_rate = expFit->GetParameter("#lambda");
     std::cout<< best_fit_rate<<std::endl;
     double sigma_best_fit_rate=expFit->GetParError(1);
-    std::cout << "Valore di best fit per la media: " << 1/best_fit_rate << " +- "<< sigma_best_fit_rate/pow(best_fit_rate,2)<< std::endl;
+    std::cout << "Valore di best fit per la media: " << 1/best_fit_rate << " +- "<< sigma_best_fit_rate/pow(best_fit_rate,2)<< std::endl;*/
+}
+
+void histogram_fitlinear(std::vector<double>& times, const char* hist_name, const char* title, Color_t color, int correction = 0) {
+    // Calcolo delle differenze tra i tempi
+    std::vector<double> new_times = (correction > 0) ? calcolaDifferenzeTempi(times) : times;
+
+    std::vector<double> time_differences;
+    for (size_t i = 1; i < new_times.size(); ++i) {
+        time_differences.push_back(new_times[i] - new_times[i - 1]);
+    }
+
+    // Creazione dell'istogramma con 100 bins equispaziati
+    double max_time_diff = *std::max_element(time_differences.begin(), time_differences.end());
+    TH1F* h1 = new TH1F(hist_name, title, 100, 0, max_time_diff);
+
+    // Riempimento dell'istogramma con le differenze di tempo
+    for (double t_diff : time_differences) {
+        h1->Fill(t_diff);
+    }
+
+    h1->SetXTitle("Differenza di tempo (s)");
+    h1->SetYTitle("Conteggi");
+
+    // Creazione del canvas e disegno dell'istogramma
+    TCanvas* canvaslin = new TCanvas("canvaslin", "Istogramma delle differenze tra i tempi (singolo telescopio)", 1000, 800);
+    
+    canvaslin->SetLogy(); // Imposta l'asse y in scala logaritmica
+    canvaslin->cd(1);
+    
+    h1->Draw();
+
+    // Creazione dei punti per il fit lineare
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<double> y_errors; // Errori per il grafico
+
+    for (int i = 1; i <= h1->GetNbinsX(); ++i) {
+        double binContent = h1->GetBinContent(i);
+        if (binContent > 0) { // Considera solo i bin con conteggi maggiori di zero
+            x.push_back(h1->GetBinCenter(i));
+            y.push_back(log(binContent)); // Logaritmo delle occorrenze
+            y_errors.push_back(sqrt(binContent)/binContent); // Imposta un errore costante, ad esempio 1
+        }
+    }
+
+    // Creazione del grafico TGraphErrors per il fit
+    TGraphErrors *graphErrors = new TGraphErrors(x.size(), x.data(), y.data(), nullptr, y_errors.data());
+
+    // Creazione della funzione lineare per il fit
+    TF1* linearFit = new TF1("linearFit", "[0] + [1]*x", 0, max_time_diff);
+    linearFit->SetParName(0, "cost");  
+    linearFit->SetParName(1, "coeff. ang.");  
+
+    // Esecuzione del fit lineare
+    graphErrors->Fit(linearFit, "L");
+
+    // Disegno della funzione di fit
+    linearFit->SetLineColor(color);
+    
+    // Creazione di un nuovo canvas per il grafico delle occorrenze
+    TCanvas* canvasOccorrenze = new TCanvas("canvasOccorrenze", "Grafico semilog delle differenze tra i tempi (singolo telescopio)", 1000, 800);
+
+    graphErrors->Draw("AP"); // Disegna il grafico con punti e errori
+    graphErrors->GetXaxis()->SetTitle("Differenza di tempo (s)");
+    graphErrors->GetYaxis()->SetTitle("ln(conteggi)");
+    graphErrors->SetTitle(hist_name);
+
+    // Sovrapponi la linea di fit al grafico delle occorrenze
+    linearFit->Draw("same");
+
+    // Estrai parametri dal fit
+    double intercept = linearFit->GetParameter(0);
+    double intercept_err = linearFit->GetParError(0);
+    double slope = linearFit->GetParameter(1);
+    double slope_err = linearFit->GetParError(1);
+
+    // Calcola chi-quadro ridotto
+    double chi_square = linearFit->GetChisquare();
+    int ndf = x.size() - linearFit->GetNpar(); // numero di gradi di libertà
+    double reduced_chi_square = chi_square / ndf;
+
+    // Calcolo del p-value
+    double p_value = TMath::Prob(chi_square, ndf);
+
+    TPaveText* pave = new TPaveText(0.65, 0.85, 0.85, 0.95, "NDC");
+    pave->SetFillColor(kWhite);
+    pave->SetBorderSize(1);
+    
+    pave->AddText(Form("#lambda: %.3f #pm %.3f Hz ", slope, slope_err));
+    pave->AddText(Form("#chi^{2}/ndf: %.2f", reduced_chi_square));
+    
+   // Aggiungi il p-value al box di statistiche
+   pave->AddText(Form("p-value: %.3f", p_value));
+
+   pave->Draw();
+    canvasOccorrenze->Update();
 }
 
 #endif
