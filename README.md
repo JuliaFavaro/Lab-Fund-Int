@@ -9,7 +9,7 @@ Draft and syllabus of this class: [Fundamental Interactions Laboratory]( [https:
 ### Repository structure
 -_Prel_ folder: preliminary lab experience on cosmic ray detection through Scintillators and PMT detectors.
 -_Sciami_ folder: Lab experience on the characterization of extensive cosmic rays
--_Compton_ folder: 
+-_Compton_ folder: Lab experience verifying Scattering Compton known properties and measuring electron mass.
 -_Mulife_ folder: 
 
 Each folder contains a README file that goes through all the code files and results obtained.
