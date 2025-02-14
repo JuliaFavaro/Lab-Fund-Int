@@ -1,0 +1,271 @@
+#include <vector>
+#include <string>
+#include <iostream>
+#include <algorithm>
+#include <numeric>
+#include <cmath>
+#include <fstream>
+#include <ctime>
+//#include<root-framework/RDataFrame.hxx>
+
+#include <TCanvas.h>
+#include <TGraphErrors.h>
+#include <TMultiGraph.h>
+#include <TLegend.h>
+#include <TLatex.h>
+#include <TH1F.h>
+#include <TH1D.h>
+#include <TF1.h>
+#include <TMath.h>
+#include <TStyle.h>
+
+using namespace std;
+
+#include "read_data10.h"
+//#include "flux_graphs_10.h"
+//#include "atmosphere.h"
+
+int n_triple = 0;
+int n_triple_vere = 0;
+vector<double> tempi_veri;
+vector<double> delta_t;
+vector<double> time_123;
+vector<int> ch_123;
+
+void counter(const std::vector<std::vector<int>>& sequence, int j) {
+    std::vector<int> list_for_one = {ch_123[j], ch_123[j + 1], ch_123[j + 2]};
+    std::vector<double> tempi = {time_123[j], time_123[j + 1], time_123[j + 2]};
+    
+    if (std::find(sequence.begin(), sequence.end(), list_for_one) != sequence.end()) {
+        n_triple++;
+        if (tempi.back() - tempi.front() < 480e-9) {
+            n_triple_vere++;
+            tempi_veri.push_back(tempi.front());
+        }
+    }
+}
+
+#include <vector>
+#include <iostream>
+#include <tuple>
+#include <cmath>
+#include <algorithm>
+
+#include <TCanvas.h>
+#include <TH1F.h>
+#include <TAxis.h>
+#include <TLegend.h>
+
+// Struttura per memorizzare le differenze di tempo e i canali corrispondenti
+struct DifferenzaTempo {
+    double differenza;
+    int canale_iniziale;
+    int canale_finale;
+};
+
+// Funzione per calcolare le differenze di tempo con i canali
+std::vector<DifferenzaTempo> calcolaDifferenzeTempi(const std::vector<double>& tempi_veri, const std::vector<int>& ch_123) {
+    std::vector<DifferenzaTempo> differenze_tempi;
+
+    for (size_t i = 0; i < tempi_veri.size(); i += 3) {
+        if (i + 1 < tempi_veri.size()) {
+            differenze_tempi.push_back({tempi_veri[i + 1] - tempi_veri[i], ch_123[i], ch_123[i + 1]});
+        }
+        if (i + 2 < tempi_veri.size()) {
+            differenze_tempi.push_back({tempi_veri[i + 2] - tempi_veri[i + 1], ch_123[i + 1], ch_123[i + 2]});
+        }
+    }
+
+    return differenze_tempi;
+}
+
+// Funzione per creare l'istogramma delle differenze di tempo
+void makeHistogramDifferenzeTempi(const std::vector<DifferenzaTempo>& differenze_tempi, int n_bins, const char* xlabel, double t_min, double t_max, const char* ylabel, const char* name) {
+    TCanvas* c = new TCanvas(name, name, 800, 600);
+
+    // Creazione di istogrammi per ciascuna combinazione di canali
+    TH1F* hist_28 = new TH1F("hist_2_8", "Canale 2-8", n_bins, t_min, t_max);
+    TH1F* hist_864 = new TH1F("hist_8_64", "Canale 8-64", n_bins, t_min, t_max);
+    TH1F* hist_264 = new TH1F("hist_2_64", "Canale 2-64", n_bins, t_min, t_max);
+
+    for (const auto& diff : differenze_tempi) {
+        if (diff.canale_iniziale == 2 && diff.canale_finale == 8) {
+            hist_28->Fill(diff.differenza);
+        } else if (diff.canale_iniziale == 8 && diff.canale_finale == 64) {
+            hist_864->Fill(diff.differenza);
+        } else if (diff.canale_iniziale == 2 && diff.canale_finale == 64) {
+            hist_264->Fill(diff.differenza);
+        }
+    }
+
+    hist_28->SetLineColor(kRed);
+    hist_864->SetLineColor(kBlue);
+    hist_264->SetLineColor(kGreen);
+
+    hist_28->Draw();
+    hist_864->Draw("same");
+    hist_264->Draw("same");
+
+    hist_28->GetXaxis()->SetTitle(xlabel);
+    hist_28->GetYaxis()->SetTitle(ylabel);
+
+    // Creazione della legenda
+    TLegend* legend = new TLegend(0.7, 0.7, 0.9, 0.9);
+    legend->AddEntry(hist_28, "Canale 2-8", "l");
+    legend->AddEntry(hist_864, "Canale 8_64", "l");
+    legend->AddEntry(hist_264, "Canale 2_64", "l");
+    legend->Draw();
+
+    c->SaveAs((std::string(name) + ".png").c_str());
+}
+
+
+
+
+   
+
+
+
+
+
+void makeHistogram(const std::vector<double>& data, int n_bins, const char* xlabel, double t_min, double t_max, const char* ylabel, const char* name) {
+    TCanvas* c = new TCanvas(name, name, 800, 600);
+    TH1F* hist = new TH1F(name, name, n_bins, t_min, t_max);
+    
+    for (const auto& value : data) {
+        hist->Fill(value);
+    }
+    
+    hist->GetXaxis()->SetTitle(xlabel);
+    hist->GetYaxis()->SetTitle(ylabel);
+    hist->Draw();
+    
+    c->SaveAs((std::string(name) + ".png").c_str());
+}
+
+int acquisizione3giorni() {
+    std::cout << "Inizio" << std::endl;
+
+    // Nome del file di input
+    std::string filename = "FIFOread_20241213-091357.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
+
+    // Vettori per memorizzare i numeri dei canali e i tempi del file
+    std::vector<int> decimalNumbers;
+    std::vector<double> counts;
+    readData(filename, decimalNumbers, counts);
+
+    // Sistema i tempi con i reset
+    std::vector<int> Numbers;
+    std::vector<double> tempi;
+    reset_clock(decimalNumbers, counts, Numbers, tempi);
+
+    std::vector<int> Canali_selezionati;
+    std::vector<double> Tempi_selezionati;
+    for (size_t k = 0; k < Numbers.size(); k++) {
+        if (Numbers[k] == 2 || Numbers[k] == 8 || Numbers[k] == 64) {
+            Canali_selezionati.push_back(Numbers[k]);
+            Tempi_selezionati.push_back(tempi[k]);
+        }
+    }
+
+    for (size_t m = 0; m < 10; m++) {
+        std::cout << "canale selezionato: " << Canali_selezionati[m] << " tempo selezionato: " << Tempi_selezionati[m] << std::endl;
+    }
+    // Ho creato vettore con solo i canali 2, 8 e 64
+    // Ora voglio cercare una sequenza di accensione dei canali per cercare le coincidenze triple
+
+    // Trasferisci i dati nei vettori ch_123 e time_123
+    for (size_t i = 0; i < Canali_selezionati.size(); ++i) {
+        if (Canali_selezionati[i] == 2 || Canali_selezionati[i] == 8 || Canali_selezionati[i] == 64) {
+            ch_123.push_back(Canali_selezionati[i]);
+            time_123.push_back(Tempi_selezionati[i]);
+        }
+    }
+
+    std::vector<std::vector<int>> sequences_2 = { {2, 8, 64}, {2, 64, 8} };
+    std::vector<std::vector<int>> sequences_8 = { {8, 2, 64}, {8, 64, 2} };
+    std::vector<std::vector<int>> sequences_64 = { {64, 2, 8}, {64, 8, 2} };
+
+    for (size_t j = 0; j < time_123.size() - 3; ++j) {
+        if (ch_123[j] == 2) {
+            counter(sequences_2, j);
+        }
+        else if (ch_123[j] == 8) {
+            counter(sequences_8, j);
+        }
+        else if (ch_123[j] == 64) {
+            counter(sequences_64, j);
+        }
+    }
+
+    std::cout << "Il numero di triple accettabili è: " << n_triple << std::endl;
+    std::cout << "Il numero di triple vero è: " << n_triple_vere << std::endl;
+
+    for (size_t i = 1; i < tempi_veri.size(); ++i) {
+        delta_t.push_back(tempi_veri[i] - tempi_veri[i - 1]);
+    }
+
+    makeHistogram(delta_t, 50, "Delta t [ns]", *std::min_element(delta_t.begin(), delta_t.end()), *std::max_element(delta_t.begin(), delta_t.end()), "counts", "distribuzione_temporale_sciami");
+    makeHistogram(tempi_veri, 50, "Tempo [s]", 0, *std::max_element(tempi_veri.begin(), tempi_veri.end()), "counts", "tempi_veri_histogram");
+
+ 
+
+
+    // Calcola il tempo totale di acquisizione
+    double time_start_total = *std::min_element(tempi.begin(), tempi.end());
+    double time_end_total = *std::max_element(tempi.begin(), tempi.end());
+    double total_time = time_end_total - time_start_total; // secondi
+    std::cout << "Tempo totale in ore: " << total_time / 3600 << std::endl;
+
+    // Vettore di vettori per memorizzare i tempi di arrivo per ciascun canale
+    std::vector<std::vector<double>> channelTimes(7);
+
+    // Processa ciascun numero decimale per determinare i canali attivati
+    for (size_t i = 0; i < decimalNumbers.size(); ++i) {
+        int Number = Numbers[i];
+        std::vector<int> activeChannels = getActiveChannels(Number);
+
+
+
+        // Aggiungi il tempo corrispondente ai canali attivati
+        for (int channel : activeChannels) {
+            channelTimes[channel].push_back(tempi[i]);
+        }
+    }
+    std::cout << "Diviso in canali" << std::endl;
+/*
+    // Legenda dei telescopi: il canale 2 è il canale del Setup06, il canale 4 è il Setup08, mentre il canale 7 è il telescopio in Stanza2004.
+    double interval = 3600; // 1 ora
+    int num_intervals = static_cast<int>(total_time / interval);
+    //Rategraph3(interval, num_intervals, channelTimes[1], channelTimes[3], channelTimes[6]);
+
+    std::cout << "Distribuzione poissoniana" << std::endl;
+
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[1], "Conteggi06", "Telescopio 06", kBlue + 2);
+    // 1 indica che voglio che avvenga una correzione per i conteggi accidentali
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[3], "Conteggi08", "Telescopio 08", kRed + 2, 1);
+    //histogram_fitpoiss(10, static_cast<int>(total_time / 10), channelTimes[6], "Conteggi04", "Telescopio 04", kGreen + 2);
+
+    std::cout << "Distribuzione esponenziale" << std::endl;
+
+    //histogram_fitexponential(channelTimes[1], "Dt Setup06", "Telescopio 06", kBlue + 2);
+    //histogram_fitexponential(channelTimes[3], "Dt Setup08", "Telescopio 08", kRed + 2, 1);
+    //histogram_fitexponential(channelTimes)
+    */
+
+ 
+    // Calcola le differenze di tempo
+    std::vector<DifferenzaTempo> differenze_tempi = calcolaDifferenzeTempi(tempi_veri, ch_123);
+
+    // Crea l'istogramma delle differenze di tempo
+    makeHistogramDifferenzeTempi(differenze_tempi, 50, "Differenza di tempo [s]", 0, 0.5, "Conti", "istogramma_differenze_tempi");
+
+    // Stampa le differenze di tempo con i canali
+    std::cout << "Differenze di tempo tra gli eventi di ciascuna sequenza:" << std::endl;
+    for (const auto& diff : differenze_tempi) {
+        std::cout << "Differenza: " << diff.differenza << " s, Canale iniziale: " << diff.canale_iniziale << ", Canale finale: " << diff.canale_finale << std::endl;
+    }
+
+
+   return(0);
+}
