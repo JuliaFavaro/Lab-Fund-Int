@@ -516,6 +516,7 @@ void plotWeatherData(const std::vector<BinnedData>& atmDataBins){
     canvasatm->cd(2);
     TGraph* graphpress= new TGraph(hours.size(), hours.data(), DP.data());
     graphpress->SetTitle("Pressione;Tempo (h);Pressione (mbar)"); 
+    graphpress->GetTitle()->SetTit"Pressione;Tempo (h);Pressione (mbar)"); 
     graphpress->SetMarkerStyle(21); 
     graphpress->SetMarkerSize(1);
     graphpress->Draw("APL"); 
