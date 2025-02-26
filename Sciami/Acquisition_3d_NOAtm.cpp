@@ -68,15 +68,11 @@ vector<double> time_123;
 vector<int> ch_123;
 
 void counter(vector<int> sequence, vector<int>&list_for_one, vector<double>&tempiT){
-global n_triple, n_triple_vere;
-if(find(sequence.begin(), sequence.end(),list_for_one)!=sequence.end()){
-n_triple++;
-if(tempi.back()-tempi.front()<//da mettere i tempi che ci aspettiamo))
-
-
-}
-
-
+    global n_triple, n_triple_vere;
+    if(find(sequence.begin(), sequence.end(),list_for_one)!=sequence.end()){
+        n_triple++;
+        if(tempi.back()-tempi.front()<//da mettere i tempi che ci aspettiamo))
+    }
 }
 
 
