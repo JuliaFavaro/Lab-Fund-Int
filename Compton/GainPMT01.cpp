@@ -52,7 +52,7 @@ int main(){
 
     // Nome del file di input
     std::string filename = "Dati/histo-set01-70deg.dat";
-
+S
     // Vettori per memorizzare le ampiezze registrate nei canali
     std::vector<double> channels;
     readData(filename, channels);
