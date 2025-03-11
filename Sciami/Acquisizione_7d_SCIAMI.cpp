@@ -39,11 +39,12 @@ using namespace std;
 #include "SCIAMI.h"
 
 
-int acquisizione3giorni() {
+
+int acquisizione7giorni() {
     std::cout << "Inizio" << std::endl;
 
     // Nome del file di input
-    std::string filename = "FIFOread_20241213-091357.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
+    std::string filename = "FIFOread_20241213-091357_7day.txt"; // Questo funziona solo se "Dati" si trova in una sottocartella della principale
 
     // Vettori per memorizzare i numeri dei canali e i tempi del file
     std::vector<int> decimalNumbers;
@@ -112,8 +113,11 @@ int acquisizione3giorni() {
     std::cout << "Il numero di triple accettabili è: " << n_triple << std::endl;
     std::cout << "Il numero di triple vero (entro 480ns) è: " << n_triple_vere << std::endl;
 
+    for (size_t i = 1; i < tempi_veri.size(); ++i) {
+        delta_t.push_back(tempi_veri[i] - tempi_veri[i - 1]);
+    }
 
-//    std::vector<double> tempi_arrivo = estraiTempi(all_triple_vere);
+   // std::vector<double> tempi_arrivo = estraiTempi(all_triple_vere);
     
 
     // Calcola il tempo totale di acquisizione
@@ -124,16 +128,19 @@ int acquisizione3giorni() {
     double interval = 3600; //1 ora
     int num_intervals=static_cast<int>(total_time / interval);
 
-    /*
     std::vector<double> time_intervals(num_intervals);
     std::vector<double> rates_sciami(num_intervals, 0);
     std::vector<double> errore(num_intervals, 0);
     
-     RategraphSCIAMI(interval, num_intervals,tempi_arrivo); 
+    /*
+    RategraphSCIAMI(interval, num_intervals,tempi_arrivo); 
    for(int a=0; a<rates_sciami.size(); a++){
     std::cout<<"Rate sciami: "<< rates_sciami[a]<< std::endl;
    }
- */
+  */
+   // makeHistogram(delta_t, 50, "Delta t [ns]", *std::min_element(delta_t.begin(), delta_t.end()), *std::max_element(delta_t.begin(), delta_t.end()), "counts", "distribuzione_temporale_sciami");
+    // makeHistogram(tempi_veri, 50, "Tempo [s]", 0, *std::max_element(tempi_veri.begin(), tempi_veri.end()), "counts", "tempi_veri_histogram");
+
  
  // Calcola le differenze di tempo solo per le triple vere
  std::vector<double> differenze_28;
@@ -157,16 +164,16 @@ int acquisizione3giorni() {
 
 */
    // Crea gli istogrammi delle differenze di tempo
-   makeHistogram(differenze_28, 120, "#Deltat [s]", 0, 5e-8, "Conteggi", "#Deltat tra Setup06 e Setup08, 71 ore");
-   makeHistogram(differenze_864, 120, "#Deltat [s]", 0, 1e-7, "Conteggi", "#Deltat tra Setup08 e Setup04, 71 ore");
-   makeHistogram(differenze_264, 120, "#Deltat [s]", 0, 1e-7, "Conteggi", "#Deltat tra Setup06 e Setup04, 71 ore");
+   makeHistogram(differenze_28, 120, "#Deltat [s]", 0, 5e-8, "Conteggi", "#Deltat tra Setup06 e Setup08, 169 ore");
+   makeHistogram(differenze_864, 120, "#Deltat [s]", 0, 1e-7, "Conteggi", "#Deltat tra Setup08 e Setup04, 169 ore");
+   makeHistogram(differenze_264, 120, "#Deltat [s]", 0, 1e-7, "Conteggi", "#Deltat tra Setup06 e Setup04, 169 ore");
 
 
-double rate = calcolaRate(tempi_veri);
-    if (rate > 0.0) {
+//double rate = calcolaRate(tempi_arrivo);
+  /*  if (rate > 0.0) {
         std::cout << "Il rate degli eventi è: " << rate << " eventi per unità di tempo." << std::endl;
-        std::cout<< "Fine calcolo rate" << std::endl;
     }
+        */
 
     for (size_t i = 1; i < tempi_veri.size(); ++i) {
        // std::cout<<"Tempi_veri[i] :    "<<tempi_veri[i]<<std::endl;
@@ -176,31 +183,12 @@ double rate = calcolaRate(tempi_veri);
  for(const auto&tripla : all_triple_vere){
     tempi_triple_da_TRIPLE.push_back(tripla.tempo1);
     for(int j=0; j<tempi_triple_da_TRIPLE.size(); j++){
-   // std::cout<<"tempi_triple_da_TRIPLE[j]"   <<tempi_triple_da_TRIPLE[j]<<std::endl;
+    //std::cout<<"tempi_triple_da_TRIPLE[j]"   <<tempi_triple_da_TRIPLE[j]<<std::endl;
  } 
 }
-/*
-    for(int h=0; h<tempi_veri.size(); h++){
-        std::cout<<"Differenze tra arrivi di triple successive"<<delta_t[h]<<std::endl;
-    } 
-   */
-    
-        int num_bins = 100; // Numero di bin nell'istogramma
-        double min_value = *min_element(delta_t.begin(), delta_t.end());
-        double max_value = *max_element(delta_t.begin(), delta_t.end());
-        TH1F* histo = new TH1F("histo", "Istogramma dei delta_t tra triple;Valore;Conteggio", num_bins, min_value, max_value);
-    
-        // Riempie l'istogramma con i dati dal vettore
-        for (double valore : delta_t) {
-            histo->Fill(valore);
-        }
-    
-        // Crea un canvas e disegna l'istogramma
-        TCanvas* c1 = new TCanvas("c1", "Istogramma dei Dati", 800, 600);
-        histo->Draw();
-        c1->Update();
 
- return 0;
- }
+   return(0);
+}
+
 
 /*Devo creare un vettore che contenga il numero di triple e il tempo a cui sono scattate, poi calcolare il rate di loro*/
