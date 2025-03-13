@@ -27,4 +27,4 @@ For more explanation or any suggestions, write me at j.favaro@studenti.unipi.it 
 GNU General Public License v3.0 or later
 
 ### Project status
-February 2025 - ... 
+February- March 2025
