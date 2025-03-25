@@ -3,6 +3,7 @@
 ## Compton Scattering lab experience
 
 ### Folder organization:
+-Calcoli veloci
 
 ### Objectives of the experience
 1. Observe the Compton scattering by measuring the energy of the outgoing photon at different angle of deflection and verify the theoretical prediction.
