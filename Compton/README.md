@@ -3,7 +3,10 @@
 ## Compton Scattering lab experience
 
 ### Folder organization:
--Calcoli veloci
+- _Calcoli veloci_ :
+- _Fondo.cpp_
+- _BKG_CS.cpp_ ,  _BKG_Na.cpp_ , _BKG_Co.cpp_ :
+
 
 ### Objectives of the experience
 1. Observe the Compton scattering by measuring the energy of the outgoing photon at different angle of deflection and verify the theoretical prediction.
