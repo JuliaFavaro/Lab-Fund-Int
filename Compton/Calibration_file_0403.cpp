@@ -94,35 +94,42 @@ int calibration() {
     TH1D* hCs = histogram(data_Cs, "hCs", "Calibrazione 137Cs", kGreen+2);
     TH1D* hCo = histogram(data_Co, "hCo", "Calibrazione 60Co", kBlue+2);
     TH1D* hNa = histogram(data_Na, "hNa", "Calibrazione 22Na", kRed+2);
-
-    // Visualizzazione separata per ogni istogramma
-    TCanvas* cCs = new TCanvas("cCs","Istogrammi Occorrenze Canali Cs");
+    TCanvas* cCs = new TCanvas("cCs","Fondo pol5");
     cCs->cd();
     hCs->Draw();
     addTimestamp(cCs, timestamp_Cs);
+
+    // Fit 1: Solo fondo polinomiale di 5° grado
+    TF1* fBkg = new TF1("fBkg", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x", 1650, 1980);
+    fBkg->SetParameters(5, -0.001, 1e-7, -1e-11, 1e-15, -1e-19); // Stima iniziale
+    hCs->Fit("fBkg","L","", 1650, 1980);
+
+    // Estrai i parametri del fondo
+    double a0 = fBkg->GetParameter(0);
+    double a1 = fBkg->GetParameter(1);
+    double a2 = fBkg->GetParameter(2);
+    double a3 = fBkg->GetParameter(3);
+    double a4 = fBkg->GetParameter(4);
+    double a5 = fBkg->GetParameter(5);
+
+    // Fit 2: Fondo polinomiale + prima gaussiana
+    TF1* fPol1Gaus = new TF1("fPol1Gaus", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x + [6]*exp(-0.5*((x-[7])/[8])**2)", 1650, 2800);
+    fPol1Gaus->SetParameters(a0, a1, a2, a3, a4, a5, 9648, 2420, 81); // Ampiezza da immagine intorno a 70, centro 1800, sigma 100
+
+    fPol1Gaus->SetParLimits(6, 9000, 9700); // Vincola la media del ampiezza picco
+    fPol1Gaus->SetParLimits(8,  60, 85); // Vincola la media del larghezza picco
     
-    // Fit 2
-    TF1* f2c = new TF1("f2c", "[0] * exp([1] * x)+[2]*exp(-0.5*((x-[3])/[4])**2)", 1650, 2800);
-    f2c->SetParameter(0, 1.91e5);
-    f2c->SetParameter(1, -0.003);
-    //f2c->SetParameter(2, a2);
-    //f2c->SetParameter(3, a3);
-    //f2c->SetParameter(4, a4);
-    f2c->SetParameter(2, 9648);
-    f2c->SetParameter(3, 2420);
-    f2c->SetParameter(4, 80);
-    f2c->SetParName(2, "A_1"); //ampiezza gaussiana
-    f2c->SetParName(3, "#mu_1"); 
-    f2c->SetParName(4, "#sigma_1");
-    hCs->Fit("f2c","RLI+N","", 1650, 2800);
+    fPol1Gaus->SetParName(6, "A_1"); //ampiezza gaussiana
+    fPol1Gaus->SetParName(7, "#mu_1"); 
+    fPol1Gaus->SetParName(8, "#sigma_1");
+    hCs->Fit("fPol1Gaus","L","", 1650, 2800);
+
     gStyle->SetOptFit(1111);
 
     // Aggiungi il valore di mu alla lista
-    double mu_Cs = f2c->GetParameter(3);
-    double mu_err_Cs = f2c->GetParError(3);
+    double mu_Cs = fPol1Gaus->GetParameter(7);
+    double mu_err_Cs = fPol1Gaus->GetParError(7);
     double energy_Cs = 662e3;
-    
-    cCs->SaveAs("Risultati/CalCs_0403.pdf");
 
     /*-------------------------------------------------------------------------*/
 
@@ -140,9 +147,9 @@ int calibration() {
     f2->SetParameter(4, 4e-12);
     f2->SetParameter(5, 1e-16);
    
-    f2->SetParameter(6, 400);
-    f2->SetParameter(7, 4150);
-    f2->SetParameter(8, 70);
+    f2->SetParameter(6, 600);
+    f2->SetParameter(7, 4200);
+    f2->SetParameter(8, 100);
     f2->SetParameter(9, 296);
     f2->SetParameter(10, 4715);
     f2->SetParameter(11, 108);
@@ -154,7 +161,7 @@ int calibration() {
     f2->SetParName(10, "#mu_2"); 
     f2->SetParName(11, "#sigma_2");
 
-    hCo->Fit("f2","L","",3250, 4950); 
+    hCo->Fit("f2","L","",3250, 5000); 
     gStyle->SetOptFit(1111);
 
     // Aggiungi i valori di mu alla lista
@@ -165,101 +172,106 @@ int calibration() {
     double mu_err_Co2 = f2->GetParError(10);
     double energy_Co2 = 1.33e6;
 
-    cCo->SaveAs("Risultati/CalCo_0403.pdf");
     /*-------------------------------------------------------------------------*/
 
-    TCanvas* cNa = new TCanvas("cNa","Istogrammi Occorrenze Canali Na");
+    TCanvas* cNa = new TCanvas("cNa","Fondo esponenziale");
     cNa->cd();
     hNa->Draw();
     addTimestamp(cNa, timestamp_Na);
 
-    //Provo a fare fit esponenziale solo nella parte di fondo
-    TF1 *fa = new TF1("fa", "[0]*exp(-[1]*x)", 1000, 1600);
-    fa->SetParameters(10, 0.001);
-    hNa->Fit("fa","L","", 2100, 3700);
-    
+    // Fit 1: Solo fondo polinomiale di 5° grado
+    TF1* fBkg_Na= new TF1("fBkg_Na", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x", 2000, 3000);
+    fBkg_Na->SetParameters(5, -0.001, 1e-7, -1e-11, 1e-15, -1e-19); // Stima iniziale
+    hNa->Fit("fBkg_Na","L","", 2000, 3000);
+
     // Estrai i parametri del fondo
-    double p0 = fa->GetParameter(0);
-    double p1 = fa->GetParameter(1);
+    double p0 = fBkg_Na->GetParameter(0);
+    double p1 = fBkg_Na->GetParameter(1);
+    double p2 = fBkg_Na->GetParameter(2);
+    double p3 = fBkg_Na->GetParameter(3);
+    double p4 = fBkg_Na->GetParameter(4);
+    double p5 = fBkg_Na->GetParameter(5);
 
-    // Fit 2: Fondo esponenziale + prima gaussiana
-    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 1000, 2000);
-    fExp1Gaus->SetParameters(p0, p1, 60, 1850, 50);
-    hNa->Fit("fExp1Gaus","L","", 1000, 2000);
+    // Fit 2: Fondo polinomiale + prima gaussiana
+    TF1* fPol1Gaus_Na = new TF1("fPol1Gaus_Na", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x + [6]*exp(-0.5*((x-[7])/[8])**2)", 1150, 2000);
+    fPol1Gaus_Na->SetParameters(p0, p1, p2, p3, p4, p5, 200, 1850, 50); // Ampiezza da immagine intorno a 70, centro 1800, sigma 100
+    hNa->Fit("fPol1Gaus_Na","L","", 1150, 2000);
 
-    double b0 = fExp1Gaus->GetParameter(0);
-    double b1 = fExp1Gaus->GetParameter(1);
-    double b2 = fExp1Gaus->GetParameter(2);
-    double b3 = fExp1Gaus->GetParameter(3);
-    double b4 = fExp1Gaus->GetParameter(4); 
+    // Fit 3: Fondo polinomiale + due gaussiane
+    TF1* fFinal = new TF1("fFinal", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x + [6]*exp(-0.5*((x-[7])/[8])**2) + [9]*exp(-0.5*((x-[10])/[11])**2)", 1150, 5000);
+    fFinal->SetParameter(0, p0);
+    fFinal->SetParameter(1, p1);
+    fFinal->SetParameter(2, p2);
+    fFinal->SetParameter(3, p3);
+    fFinal->SetParameter(4, p4);
+    fFinal->SetParameter(5, p5);
+    fFinal->SetParameter(6, 200);
+    fFinal->SetParameter(7, 1850);
+    fFinal->SetParameter(8, 50);
+    fFinal->SetParameter(9,10);
+    fFinal->SetParameter(10, 4450);
+    fFinal->SetParameter(11, 75);
+    
+    fFinal->SetParName(6, "A1");
+    fFinal->SetParName(7, "#mu_1");
+    fFinal->SetParName(8, "#sigma_1");
+    fFinal->SetParName(9, "A2");
+    fFinal->SetParName(10, "#mu_2");
+    fFinal->SetParName(11, "#sigma_2");
+    
+    fFinal->SetParLimits(10, 4420, 4480);
+    hNa->Fit("fFinal","L","", 1150, 5000);
 
-    TF1* fFinal = new TF1("fFinal", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2) + [5]*exp(-0.5*((x-[6])/[7])**2)", 1000, 5000);
-    fFinal->SetParameters(b0, b1, b2, b3, b4, 20, 4500, 75);
-    fFinal->SetParLimits(6, 4200, 4800); // Vincola la media del secondo picco
-    fFinal->SetParLimits(7, 50, 80); // Vincola la media del secondo picco
-    hNa->Fit("fFinal","L","", 1000, 5000);
     gStyle->SetOptFit(1111);
 
-    fFinal->SetParName(2, "A1");
-    fFinal->SetParName(3, "#mu_1");
-    fFinal->SetParName(4, "#sigma_1");
-    fFinal->SetParName(5, "A2");
-    fFinal->SetParName(6, "#mu_2");
-    fFinal->SetParName(7, "#sigma_2");
-
     // Aggiungi i valori di mu alla lista
-    double mu_Na1 = fFinal->GetParameter(3);
-    double mu_err_Na1 = fFinal->GetParError(3);
+    double mu_Na1 = fFinal->GetParameter(7);
+    double mu_err_Na1 = fFinal->GetParError(7);
     double energy_Na1 = 551e3; //keV
-    double mu_Na2 = fFinal->GetParameter(6);
-    double mu_err_Na2 = fFinal->GetParError(6);
-    double energy_Na2 = 1102e3;
 
-    cNa->SaveAs("Risultati/CalNa_0403.pdf");
     /*-------------------------------------------------------------------------*/
     // Creare grafici separati per Cs, Co e Na
     TCanvas* cFit = new TCanvas("cFit","Funzione di calibrazione");
     TMultiGraph* mg = new TMultiGraph();
 
     TGraphErrors* graphCs = new TGraphErrors(1);
-    graphCs->SetPoint(0, energy_Cs, mu_Cs);
-    graphCs->SetPointError(0, 0, mu_err_Cs);
+    graphCs->SetPoint(0, mu_Cs, energy_Cs/1e3);
+    graphCs->SetPointError(0, mu_err_Cs, 0);
     graphCs->SetMarkerColor(kGreen + 2);
     graphCs->SetMarkerStyle(20);
     graphCs->SetMarkerSize(1.0);
     mg->Add(graphCs);
 
     TGraphErrors* graphCo = new TGraphErrors(2);
-    graphCo->SetPoint(0, energy_Co1, mu_Co1);
-    graphCo->SetPointError(0, 0, mu_err_Co1);
-    graphCo->SetPoint(1, energy_Co2, mu_Co2);
-    graphCo->SetPointError(1, 0, mu_err_Co2);
+    graphCo->SetPoint(0, mu_Co1, energy_Co1/1e3);
+    graphCo->SetPointError(0, mu_err_Co1, 0);
+    graphCo->SetPoint(1, mu_Co2, energy_Co2/1e3);
+    graphCo->SetPointError(1, mu_err_Co2, 0);
     graphCo->SetMarkerColor(kBlue + 2);
     graphCo->SetMarkerStyle(20);
     graphCo->SetMarkerSize(1.0);
     mg->Add(graphCo);
 
-    TGraphErrors* graphNa = new TGraphErrors(2);
-    graphNa->SetPoint(0, energy_Na1, mu_Na1);
-    graphNa->SetPointError(0, 0, mu_err_Na1);
-    graphNa->SetPoint(1, energy_Na2, mu_Na2);
-    graphNa->SetPointError(1, 0, mu_err_Na2);
+    TGraphErrors* graphNa = new TGraphErrors(1);
+    graphNa->SetPoint(0, mu_Na1, energy_Na1/1e3);
+    graphNa->SetPointError(0, mu_err_Na1, 0);
     graphNa->SetMarkerColor(kRed + 2);
     graphNa->SetMarkerStyle(20);
     graphNa->SetMarkerSize(1.0);
     mg->Add(graphNa);
 
     mg->Draw("AP");
-
     mg->SetTitle("Funzione di calibrazione");
+    addTimestamp(cFit, timestamp_Na);
 
-    // Fit lineare
-    TF1* fit = new TF1("fit", "pol1", std::min({energy_Cs, energy_Co1, energy_Co2, energy_Na1, energy_Na2}), std::max({energy_Cs, energy_Co1, energy_Co2, energy_Na1, energy_Na2}));
+    // Fit lineare centrato su canale 3500
+    TF1* fit = new TF1("fit", "[0]+[1]*(x-3500)", std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1}), std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1}));
+    fit->SetParameter(100, 0.5); // Stima iniziale per la pendenza
     mg->Fit(fit);
     gStyle->SetOptFit(1111);
 
-    mg->GetXaxis()->SetTitle("Energie [eV]");
-    mg->GetYaxis()->SetTitle("Canali dei picchi");
+    mg->GetXaxis()->SetTitle("Canali dei picchi");
+    mg->GetYaxis()->SetTitle("Energie [keV]");
 
     // Legenda
     TLegend* legend = new TLegend(0.1, 0.7, 0.3, 0.9);
@@ -268,6 +280,5 @@ int calibration() {
     legend->AddEntry(graphNa, "22Na");
     legend->Draw();
 
-    cFit->SaveAs("Risultati/Calibration_0403.pdf");
     return 0;
 }
