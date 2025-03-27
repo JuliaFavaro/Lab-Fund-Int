@@ -3,9 +3,9 @@
 ## Compton Scattering lab experience
 
 ### Folder organization:
-- _Calcoli veloci_ :
-- _Fondo.cpp_
-- _BKG_CS.cpp_ ,  _BKG_Na.cpp_ , _BKG_Co.cpp_ :
+- _Calcoli veloci_ : Code to reproduce the main beam divergence plot. Also verify with collected data the influence of accidental coincidences and PMT2 gain at our supply voltage and its associated sensitivity
+- _Fondo.cpp_: Code to reconstruct the spectrum histogram from our measurements, derived from misaligning the two coincidence-triggering signals.
+- _BKG_CS.cpp_ ,  _BKG_Na.cpp_ , _BKG_Co.cpp_ : Codes for preliminary background analysis of spectral acquisitions from reference calibration sources (Cesium, Sodium, Cobalt).
 
 
 ### Objectives of the experience

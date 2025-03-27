@@ -78,6 +78,15 @@ double integrateHistogram(TH1D* histogram) {
     return integral;
 }
 
+void addIntegral(TCanvas* canvas, double integral) {
+    // Function to add integral value to the canvas
+    TText* text = new TText();
+    text->SetNDC();
+    text->SetTextSize(0.05);
+    std::string integralText = "Integrale: " +std::to_string(static_cast<int>(integral)) + " counts";
+    text->DrawText(0.1, 0.72, integralText.c_str());
+}
+
 TF1* fit_exp(TH1D* hCo){
     //Provo a fare fit esponenziale solo nella parte di fondo
     TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 2800, 3150);
@@ -260,8 +269,8 @@ int miglior_fit(){
     std::vector<double> data_Co;
     readData(filename, data_Co);
 
-    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 25#circ. Distanza 51.5 cm", kBlue+2);
-    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 25#circ. Distanza 51.5 cm", kBlue+2);
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 22#circ. Distanza 51.5 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 51.5 cm", kBlue+2);
 
     // Fit principale esponenziale
     TF1* fitFunction = fit_exp(hCo);
@@ -312,6 +321,7 @@ int miglior_fit(){
     // Calcola l'integrale dell'istogramma hCo nella regione di interesse
     double integral = integrateHistogram(hCo);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
+    addIntegral(cCo, integral);
 
     return 0;
 }

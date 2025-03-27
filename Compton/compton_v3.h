@@ -30,6 +30,7 @@ struct Cobalto{
     double Err_Co1;
     double Err_Co2;
 };
+
 Cobalto CalibrazioneCoInizio(std::ifstream &fileCo) {
     std::string linea;
     Cobalto risultatoCoIn{0.0, 0.0, 0.0, 0.0}; 
