@@ -73,9 +73,9 @@ void addFitFunction(TCanvas* canvas, std::string fitInfo) {
 }
 
 int calibration() {
-    std::string filename_Cs = "Dati/Giorno_0403/calibrazioneCs_T2501_0403_histo.dat";
-    std::string filename_Co = "Dati/Giorno_0403/calibrazioneCo_T25_0403_histo.dat";
-    std::string filename_Na = "Dati/Giorno_0403/calibrazioneNa_T2501_0403_histo.dat";
+    std::string filename_Cs = "Dati/Giorno_0503/calibrazioneCs_T243_0503_histo.dat";
+    std::string filename_Co = "Dati/Giorno_0503/calibrazioneCo_T240_0503_histo.dat";
+    std::string filename_Na = "Dati/Giorno_0503/CalibrazioneNa_T237_0503_histo.dat";
     
     // Vettori per memorizzare le ampiezze di impulo registrate nei canali
     std::vector<double> data_Cs;
@@ -86,9 +86,9 @@ int calibration() {
     readData(filename_Na, data_Na);
 
     // Ottenere il timestamp di creazione dei file
-    std::string timestamp_Cs = "04.03.2025 14:30";
-    std::string timestamp_Co = "04.03.2025 14:35";
-    std::string timestamp_Na = "04.03.2025 14:40";
+    std::string timestamp_Cs = "05.03.2025 18:00";
+    std::string timestamp_Co = "05.03.2025 18:05";
+    std::string timestamp_Na = "05.03.2025 18:10";
 
     //vedere i nostri grafici uno dopo l'altro
     TH1D* hCs = histogram(data_Cs, "hCs", "Calibrazione 137Cs", kGreen+2);
@@ -98,37 +98,32 @@ int calibration() {
     cCs->cd();
     hCs->Draw();
     addTimestamp(cCs, timestamp_Cs);
-
-    // Fit 1: Solo fondo polinomiale di 5° grado
-    TF1* fBkg = new TF1("fBkg", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x", 1650, 1980);
-    fBkg->SetParameters(5, -0.001, 1e-7, -1e-11, 1e-15, -1e-19); // Stima iniziale
-    hCs->Fit("fBkg","L","", 1650, 1980);
-
-    // Estrai i parametri del fondo
-    double a0 = fBkg->GetParameter(0);
-    double a1 = fBkg->GetParameter(1);
-    double a2 = fBkg->GetParameter(2);
-    double a3 = fBkg->GetParameter(3);
-    double a4 = fBkg->GetParameter(4);
-    double a5 = fBkg->GetParameter(5);
-
-    // Fit 2: Fondo polinomiale + prima gaussiana
-    TF1* fPol1Gaus = new TF1("fPol1Gaus", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x + [5]*x*x*x*x*x + [6]*exp(-0.5*((x-[7])/[8])**2)", 1650, 2800);
-    fPol1Gaus->SetParameters(a0, a1, a2, a3, a4, a5, 9648, 2420, 81); // Ampiezza da immagine intorno a 70, centro 1800, sigma 100
-
-    fPol1Gaus->SetParLimits(6, 9000, 9700); // Vincola la media del ampiezza picco
-    fPol1Gaus->SetParLimits(8,  60, 85); // Vincola la media del larghezza picco
+    //Provo a fare fit esponenziale solo nella parte di fondo
+    TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 1650, 1980);
+    f1->SetParameters(1e7, 0.005);
+    hCs->Fit("f1","L","", 1650, 1980);
+    gStyle->SetOptFit(15);
     
-    fPol1Gaus->SetParName(6, "A_1"); //ampiezza gaussiana
-    fPol1Gaus->SetParName(7, "#mu_1"); 
-    fPol1Gaus->SetParName(8, "#sigma_1");
-    hCs->Fit("fPol1Gaus","L","", 1650, 2800);
+    // Estrai i parametri del fondo
+    double a0 = f1->GetParameter(0);
+    double a1 = f1->GetParameter(1);
 
+    // Fit 2: Fondo esponenziale + prima gaussiana
+    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 1650, 2800);
+    fExp1Gaus->SetParameters(1e7, 0.005, 16000, 2420, 81);
+
+    //fExp1Gaus->SetParLimits(2, 16000, 17000); // Vincola la ampiezza del secondo picco
+    //fExp1Gaus->SetParLimits(4, 60, 85); // Vincola la larghezza del secondo picco
+
+    fExp1Gaus->SetParName(2, "A_1"); //ampiezza gaussiana
+    fExp1Gaus->SetParName(3, "#mu_1"); 
+    fExp1Gaus->SetParName(4, "#sigma_1");
+    hCs->Fit("fExp1Gaus","L","", 1650, 2800);
     gStyle->SetOptFit(1111);
 
     // Aggiungi il valore di mu alla lista
-    double mu_Cs = fPol1Gaus->GetParameter(7);
-    double mu_err_Cs = fPol1Gaus->GetParError(7);
+    double mu_Cs = fExp1Gaus->GetParameter(3);
+    double mu_err_Cs = fExp1Gaus->GetParError(3);
     double energy_Cs = 662e3;
 
     /*-------------------------------------------------------------------------*/
@@ -147,12 +142,12 @@ int calibration() {
     f2->SetParameter(4, 4e-12);
     f2->SetParameter(5, 1e-16);
    
-    f2->SetParameter(6, 600);
-    f2->SetParameter(7, 4200);
-    f2->SetParameter(8, 100);
-    f2->SetParameter(9, 296);
-    f2->SetParameter(10, 4715);
-    f2->SetParameter(11, 108);
+    f2->SetParameter(6, 450);
+    f2->SetParameter(7, 4150);
+    f2->SetParameter(8, 90);
+    f2->SetParameter(9, 380);
+    f2->SetParameter(10, 4700);
+    f2->SetParameter(11, 88);
 
     f2->SetParName(6, "A_1"); //ampiezza gaussiana
     f2->SetParName(7, "#mu_1"); 
@@ -234,66 +229,109 @@ int calibration() {
     double energy_Na2 = 551e3*2; //keV
 
     /*-------------------------------------------------------------------------*/
-    // Creare grafici separati per Cs, Co e Na
-    TCanvas* cFit = new TCanvas("cFit","Funzione di calibrazione");
+    
+    /*
+    double min_mu = std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
+    double max_mu = std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
+
+    // Creare grafici separati per Cs, Co e Na    
+    TCanvas* cFit = new TCanvas("cFit", "Funzione di calibrazione");
     TMultiGraph* mg = new TMultiGraph();
 
-    TGraphErrors* graphCs = new TGraphErrors(1);
-    graphCs->SetPoint(0, mu_Cs, energy_Cs/1e3);
-    graphCs->SetPointError(0, mu_err_Cs, 0);
-    graphCs->SetMarkerColor(kGreen + 2);
-    graphCs->SetMarkerStyle(20);
-    graphCs->SetMarkerSize(1.0);
-    mg->Add(graphCs);
+    if (!std::isnan(mu_Cs) && !std::isinf(mu_Cs)) {
+        TGraphErrors* graphCs = new TGraphErrors(1);
+        graphCs->SetMarkerStyle(21);
+        //graphCs->SetPoint(0, mu_Cs, energy_Cs / 1e3);
+        //graphCs->SetPointError(0, mu_err_Cs, 0);
+        graphCs->SetMarkerColor(kGreen + 2);
+        graphCs->SetMarkerStyle(20);
+        graphCs->SetMarkerSize(1.0);
+        mg->Add(graphCs);
+    } else {
+        std::cerr << "mu_Cs is NaN or Inf" << std::endl;
+    }
 
     TGraphErrors* graphCo = new TGraphErrors(2);
-    graphCo->SetPoint(0, mu_Co1, energy_Co1/1e3);
+    graphCo->SetMarkerStyle(21);
+    graphCo->SetPoint(0, mu_Co1, energy_Co1 / 1e3);
     graphCo->SetPointError(0, mu_err_Co1, 0);
-    graphCo->SetPoint(1, mu_Co2, energy_Co2/1e3);
+    graphCo->SetPoint(1, mu_Co2, energy_Co2 / 1e3);
     graphCo->SetPointError(1, mu_err_Co2, 0);
     graphCo->SetMarkerColor(kBlue + 2);
     graphCo->SetMarkerStyle(20);
     graphCo->SetMarkerSize(1.0);
     mg->Add(graphCo);
 
-    TGraphErrors* graphNa = new TGraphErrors(1);
-    graphNa->SetPoint(0, mu_Na1, energy_Na1/1e3);
-    graphNa->SetPointError(0, mu_err_Na1, 0);
-    graphNa->SetMarkerColor(kRed + 2);
-    graphNa->SetMarkerStyle(20);
-    graphNa->SetMarkerSize(1.0);
-    mg->Add(graphNa);
 
+    if (!std::isnan(mu_Na1) && !std::isinf(mu_Na1)) {
+        TGraphErrors* graphNa = new TGraphErrors(1);
+        graphNa->SetMarkerStyle(21);
+        graphNa->SetPoint(0, mu_Na1, energy_Na1 / 1e3);
+        graphNa->SetPointError(0, mu_err_Na1, 0);
+        graphNa->SetMarkerColor(kRed + 2);
+        graphNa->SetMarkerStyle(20);
+        graphNa->SetMarkerSize(1.0);
+        mg->Add(graphNa);
+    } else {
+        std::cerr << "mu_Na1 is NaN or Inf" << std::endl;
+    }
+
+    cFit->cd();
     mg->Draw("AP");
+
+    TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 5000);
+    mg->Fit(fitFunc); 
+    fitFunc->SetLineColor(kGreen); 
+
     mg->SetTitle("Funzione di calibrazione");
     addTimestamp(cFit, timestamp_Na);
-
-    // Fit lineare centrato su canale 3500
-    TF1* fit = new TF1("fit", "1000+[1]*(x-3500)",mu_Na1, mu_Co2);
-    //fit->SetParameter(0, 1000); // Stima iniziale per la pendenza
-    fit->SetParameter(0, 1); // Stima iniziale per la pendenza
-    mg->Fit("fit", "L", "", mu_Na1, mu_Co2);
-    gStyle->SetOptFit(1111);
-
     mg->GetXaxis()->SetTitle("Canali dei picchi");
     mg->GetYaxis()->SetTitle("Energie [keV]");
 
-    /*
-    // Fit quadratico
-    TF1* fit_quad = new TF1("fit_quad", "[0] + [1]*(x - 3500) + [2]*(x - 3500)^2",  mu_Na1, mu_Co2);
-    fit_quad->SetParameters(1000, 0.5, 1e-4); // Stime iniziali per i parametri
-    mg->Fit("fit_quad", "L", "", mu_Na1, mu_Co2);
-    gStyle->SetOptFit(1111);
-
-    mg->GetXaxis()->SetTitle("Canali dei picchi");
-    mg->GetYaxis()->SetTitle("Energie [keV]");*/
-
-    // Legenda
     TLegend* legend = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend->AddEntry(graphCs, "137Cs");
-    legend->AddEntry(graphCo, "60Co");
-    legend->AddEntry(graphNa, "22Na");
-    legend->Draw();
-    
+    legend->AddEntry(mg->GetListOfGraphs()->At(0), "137Cs");
+    legend->AddEntry(mg->GetListOfGraphs()->At(1), "60Co");
+    legend->AddEntry(mg->GetListOfGraphs()->At(2), "22Na");
+    legend->Draw();*/
+
+
+    double min_mu = std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
+    double max_mu = std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
+
+    // Creare grafici separati per Cs, Co e Na    
+    TCanvas* cFit = new TCanvas("cFit", "Funzione di calibrazione");
+    TGraphErrors* mg = new TGraphErrors(4);
+    mg->SetMarkerStyle(21);
+
+    mg->SetPoint(0, mu_Cs, energy_Cs / 1e3);
+    mg->SetPointError(0, mu_err_Cs, 0);
+
+    mg->SetPoint(1, mu_Co1, energy_Co1 / 1e3);
+    mg->SetPointError(1, mu_err_Co1, 0);
+    mg->SetPoint(2, mu_Co2, energy_Co2 / 1e3);
+    mg->SetPointError(2, mu_err_Co2, 0);
+
+    mg->SetPoint(3, mu_Na1, energy_Na1 / 1e3);
+    mg->SetPointError(3, mu_err_Na1, 0);
+
+    mg->SetMarkerStyle(8);
+    mg->SetMarkerSize(1);
+    mg->SetMarkerColor(kAzure -9);
+    mg->SetLineColor(kAzure -9);
+    mg->Draw("AP");
+
+    TF1* fit = new TF1("fit", "pol2", 0, 5000); // Adjust range as needed
+    mg->Fit(fit, "R", 0, 5000);
+
+    // Draw fit line
+    fit->SetLineColor(kRed);
+    fit->SetLineStyle(1);
+    fit->Draw("same");
+
+    mg->SetTitle("Funzione di calibrazione");
+    addTimestamp(cFit, timestamp_Na);
+    mg->GetXaxis()->SetTitle("Canali dei picchi");
+    mg->GetYaxis()->SetTitle("Energie [keV]");
+
     return 0;
 }
