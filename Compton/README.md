@@ -3,9 +3,10 @@
 ## Compton Scattering lab experience
 
 ### Folder organization:
-- _Calcoli veloci_ : Code to reproduce the main beam divergence plot. Also verify with collected data the influence of accidental coincidences and PMT2 gain at our supply voltage and its associated sensitivity
+- _Calcoli veloci.ipynb_ : Code to reproduce the main beam divergence plot. Also verify with collected data the influence of accidental coincidences and PMT2 gain at our supply voltage and its associated sensitivity
 - _Fondo.cpp_: Code to reconstruct the spectrum histogram from our measurements, derived from misaligning the two coincidence-triggering signals.
 - _BKG_CS.cpp_ ,  _BKG_Na.cpp_ , _BKG_Co.cpp_ : Codes for preliminary background analysis of spectral acquisitions from reference calibration sources (Cesium, Sodium, Cobalt).
+- _theta_18.cpp_, _theta_22.cpp_, theta_26.cpp_ , _theta_24.cpp_ : Code to fit the peaks of a Cobalt source at different angles. Each graph includes the date, angle and acquisition duration (with relative counts). We performed a rebinning of 4 channels after verifying that the loss of information on peak separation is negligible. For each graph, we performed a spectral background fit with 3 different models: exponential, 4th-degree polynomial, and 5th-degree polynomial. Finally we decided to use the 4th-degree polynomial as the primary fit and to use the the maximum dispersion obtained from these three methods as the systematic uncertainty on the Gaussian peak channels.
 
 
 ### Objectives of the experience
@@ -22,7 +23,7 @@ Disclaimer: I'm bilingual and in many cases you will find comments in both langu
 
 ### Authors and acknowledgment
 Julia Favaro's bio: I'm a master's student from the University of Pisa (Italy). 
-Supervisors for this lab experience: Prof. Giovanni Punzi.
+Supervisors for this lab experience: Prof. Giovanni Punzi, Edoardo Bossini and Jacopo Pinzino.
 
 ### Support
 For more explanation or any suggestions, write me at j.favaro@studenti.unipi.it .
