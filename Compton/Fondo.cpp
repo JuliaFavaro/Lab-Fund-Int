@@ -107,7 +107,7 @@ int print_bkg(){
     addTimestamp(cCo, timestamp_Co, duration_Co);
 
     // Calcola l'integrale dell'istogramma hCo nella regione di interesse
-    double integral = integrateHistogram(hCo);
+    double integral = integrateHistogram(hCo_nonrebin);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
     addIntegral(cCo, integral);
 

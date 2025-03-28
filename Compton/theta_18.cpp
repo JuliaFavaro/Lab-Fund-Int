@@ -3,10 +3,6 @@
 #include <iostream>
 #include <fstream>
 #include <TCanvas.h>
-#include <cmath>
-#include <iomanip>
-#include <sstream>
-
 #include <TGraphErrors.h>
 #include <TMultiGraph.h>
 #include <TLegend.h>
@@ -60,7 +56,7 @@ TH1D* histogram(std::vector<double>& channels, const char* hist_name, const char
         h1->SetBinContent(i+1, channels[i]);
     }
     
-    TH1D* h1Rebinned2 = dynamic_cast<TH1D*>(h1->Rebin(4, hist_name));
+    TH1D* h1Rebinned2 = dynamic_cast<TH1D*>(h1->Rebin(8, hist_name));
     h1Rebinned2->SetLineColor(color);
     h1Rebinned2->GetXaxis()->SetTitle("Canali");
     h1Rebinned2->GetYaxis()->SetTitle("Conteggi");
@@ -89,59 +85,63 @@ void addIntegral(TCanvas* canvas, double integral) {
     text->SetTextSize(0.04);
     std::string integralText = "Integrale: " +std::to_string(static_cast<int>(integral)) + " counts";
     text->DrawText(0.1, 0.78, integralText.c_str());
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << 1.3;
-    std::string integralText2= "Risoluzione: " + oss.str()+ " deg";
-    text->DrawText(0.1, 0.74, integralText2.c_str());
 }
 
-TF1* fit_exp(TH1D* hCo){
+TF1* fit_exp(){
+    std::string filename = "Dati/Acquisizione_notte_1903_47cm_75deg.dat";
+
+    // Timestamp di creazione del file
+    std::string timestamp_Co = "19.03.2025 18:30";
+    std::string duration_Co = "Durata: 51993332 ms #approx 14.4h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+
     //Provo a fare fit esponenziale solo nella parte di fondo
-    TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 2800, 3150);
-    f1->SetParameter(0, 180); 
-    f1->SetParameter(1, 9e-4); // Tasso di decadimento per la regione 2800-3100
-    hCo->Fit("f1","RLM+N","",2800,3150); 
+    TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 2850, 3800);
+    f1->SetParameter(0, 40); 
+    f1->SetParameter(1, 9e-7); 
+    hCo->Fit("f1","RLM+N","",2850,3750);  //N stands for NOT DRAWING
 
     // Estrai i parametri del fondo
     double p0 = f1->GetParameter(0);
     double p1 = f1->GetParameter(1);
     
     // Fit 2: Fondo esponenziale + prima gaussiana
-    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 2800, 3600);
-    fExp1Gaus->SetParameters(p0, p1, 70, 3450, 50);
-    hCo->Fit("fExp1Gaus","RLM+N","", 2800, 3600);
+    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 2750, 5000);
+    fExp1Gaus->SetParameters(40, 9e-7, 40, 4200, 120);
 
     double a0 = fExp1Gaus->GetParameter(0);
     double a1 = fExp1Gaus->GetParameter(1);
     double a2 = fExp1Gaus->GetParameter(2);
     double a3 = fExp1Gaus->GetParameter(3);
     double a4 = fExp1Gaus->GetParameter(4); 
-
-    // Fit 3: Fondo esponenziale + prima gaussiana + seconda gaussiana
-    TF1* fExp2Gaus = new TF1("fExp2Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)+[5]*exp(-0.5*((x-[6])/[7])**2)", 2800, 4460);
-    fExp2Gaus->SetParameters(p0, p1, 40, 3483, 199, 51, 3875, 142);
-    hCo->Fit("fExp2Gaus","RLM+N","", 2800, 4460);
-
-    fExp2Gaus->SetParName(2, "A_1"); //ampiezza gaussiana
-    fExp2Gaus->SetParName(3, "#mu_1"); 
-    fExp2Gaus->SetParName(4, "#sigma_1");  
-    fExp2Gaus->SetParName(5, "A_2"); //ampiezza gaussiana
-    fExp2Gaus->SetParName(6, "#mu_2"); 
-    fExp2Gaus->SetParName(7, "#sigma_2");
     
+    fExp1Gaus->SetParLimits(2, 40, 60); // Vincola ampiezza picco
+    fExp1Gaus->SetParLimits(4, 90, 120); // Vincola larghezza picco
+    
+    hCo->Fit("fExp1Gaus","RLM+","", 2900, 4500);
+
+    fExp1Gaus->SetParName(2, "A_1"); // Gaussian amplitude
+    fExp1Gaus->SetParName(3, "#mu_1");
+    fExp1Gaus->SetParName(4, "#sigma_1");
     gStyle->SetOptFit(1111);
-    return fExp2Gaus;
+    return f1;
 }
 
 TF1* fit_pol4(TH1D* hCo){
     // Fit a fifth-degree polynomial to the background part
-    TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2620, 3150);
+    TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2750, 3000);
     f1->SetParameter(0, 50);
     f1->SetParameter(1, 1e-2);
     f1->SetParameter(2, 1e-6);
     f1->SetParameter(3, 1e-7);
     f1->SetParameter(4, 1e-11);
-    hCo->Fit("f1","RLM+N","",2800, 3150); 
+    hCo->Fit("f1","RLMI+N","",2750, 3000); 
 
     double a0 = f1->GetParameter(0);
     double a1 = f1->GetParameter(1);
@@ -150,64 +150,34 @@ TF1* fit_pol4(TH1D* hCo){
     double a4 = f1->GetParameter(4); 
 
     // Fit 2
-    TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*exp(-0.5*((x-[6])/[7])**2)", 2800, 3683);
+    TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*exp(-0.5*((x-[6])/[7])**2)", 2750, 3850);
     f2->SetParameter(0, a0);
     f2->SetParameter(1, a1);
     f2->SetParameter(2, a2);
     f2->SetParameter(3, a3);
     f2->SetParameter(4, a4);
-    f2->SetParameter(5, 40);
-    f2->SetParameter(6, 3283);
+    f2->SetParameter(5, 300);
+    f2->SetParameter(6, 3300);
     f2->SetParameter(7, 199);
-    hCo->Fit("f2","RLMI+N","", 2800, 3683);
+    hCo->Fit("f2","RLMI+N","", 2750, 3400);
 
-    double b0 = f2->GetParameter(0);
-    double b1 = f2->GetParameter(1);
-    double b2 = f2->GetParameter(2);
-    double b3 = f2->GetParameter(3);
-    double b4 = f2->GetParameter(4); 
-    double b5 = f2->GetParameter(5); 
-    double b6 = f2->GetParameter(6); 
-    double b7 = f2->GetParameter(7); 
-
-    //Fit totale
-    TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*TMath::Gaus(x, [6], [7]) + [8]*TMath::Gaus(x, [9], [10])", 2800, 4400);
-    f3->SetParameter(0, b0);
-    f3->SetParameter(1, b1);
-    f3->SetParameter(2, b2);
-    f3->SetParameter(3, b3);
-    f3->SetParameter(4, b4);
-    f3->SetParameter(5, b5);
-    f3->SetParameter(6, b6);
-    f3->SetParameter(7, b7);
-
-    f3->SetParameter(8, 51);
-    f3->SetParameter(9, 3875);
-    f3->SetParameter(10, 142);
-    f3->SetParLimits(10, 140, 150);
-
-    f3->SetParName(5, "A_1"); // Gaussian amplitude
-    f3->SetParName(6, "#mu_1");
-    f3->SetParName(7, "#sigma_1");
-    f3->SetParName(8, "A_2"); // Gaussian amplitude
-    f3->SetParName(9, "#mu_2");
-    f3->SetParName(10, "#sigma_2");
-
-    hCo->Fit("f3","RLI+","",2800, 4400);   
+    f2->SetParName(5, "A_1"); // Gaussian amplitude
+    f2->SetParName(6, "#mu_1");
+    f2->SetParName(7, "#sigma_1");
     gStyle->SetOptFit(1111);
-    return f3;
+    return f2;
 }
 
 TF1* fit_pol5(TH1D* hCo){
     // Fit a fifth-degree polynomial to the background part
-    TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5", 2620, 3150);
+    TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5", 2750, 3000);
     f1->SetParameter(0, 50);
     f1->SetParameter(1, 1e-2);
     f1->SetParameter(2, 1e-6);
     f1->SetParameter(3, 1e-7);
     f1->SetParameter(4, 1e-11);
     f1->SetParameter(5, 1e-14);
-    hCo->Fit("f1","RLM+N","",2800, 3150); 
+    hCo->Fit("f1","RLM+N","",2750, 3000); 
 
     double a0 = f1->GetParameter(0);
     double a1 = f1->GetParameter(1);
@@ -217,72 +187,55 @@ TF1* fit_pol5(TH1D* hCo){
     double a5 = f1->GetParameter(5); 
 
     // Fit 2
-    TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5+ [6]*exp(-0.5*((x-[7])/[8])**2)", 2800, 3683);
+    TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5+ [6]*exp(-0.5*((x-[7])/[8])**2)", 2750, 3400);
     f2->SetParameter(0, a0);
     f2->SetParameter(1, a1);
     f2->SetParameter(2, a2);
     f2->SetParameter(3, a3);
     f2->SetParameter(4, a4);
     f2->SetParameter(5, a5);
-    f2->SetParameter(6, 40);
-    f2->SetParameter(7, 3283);
-    f2->SetParameter(8, 199);
-    hCo->Fit("f2","RLM+N","", 2800, 3683);
+    f2->SetParameter(6, 300);
+    f2->SetParameter(7, 3300);
+    f2->SetParameter(8, 159);
+    
+    f2->SetParName(6, "A_1"); // Gaussian amplitude
+    f2->SetParName(7, "#mu_1");
+    f2->SetParName(8, "#sigma_1");
 
-    double b0 = f2->GetParameter(0);
-    double b1 = f2->GetParameter(1);
-    double b2 = f2->GetParameter(2);
-    double b3 = f2->GetParameter(3);
-    double b4 = f2->GetParameter(4); 
-    double b5 = f2->GetParameter(5); 
-    double b6 = f2->GetParameter(6); 
-    double b7 = f2->GetParameter(7); 
-    double b8 = f2->GetParameter(8); 
+    hCo->Fit("f2","LN","", 2750, 3500);
 
-    //Fit totale
-    TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5 + [6]*TMath::Gaus(x, [7], [8]) + [9]*TMath::Gaus(x, [10], [11])", 2800, 4460);
-    f3->SetParameter(0, b0);
-    f3->SetParameter(1, b1);
-    f3->SetParameter(2, b2);
-    f3->SetParameter(3, b3);
-    f3->SetParameter(4, b4);
-    f3->SetParameter(5, b5);
-    f3->SetParameter(6, b6);
-    f3->SetParameter(7, b7-200);
-    f3->SetParameter(8, b8);
-
-    f3->SetParameter(9, 51);
-    f3->SetParameter(10, 3875);
-    f3->SetParameter(11, 142);
-
-    f3->SetParName(6, "A_1"); // Gaussian amplitude
-    f3->SetParName(7, "#mu_1");
-    f3->SetParName(8, "#sigma_1");
-    f3->SetParName(9, "A_2"); // Gaussian amplitude
-    f3->SetParName(10, "#mu_2");
-    f3->SetParName(11, "#sigma_2");
-
-    hCo->Fit("f3","RLM+N","",2800, 4460);   
     gStyle->SetOptFit(1111);
-    return f3;
+    return f2;
+}
+
+double calculateAIC(TF1* fitFunction) {
+    TVirtualFitter* fitter = TVirtualFitter::GetFitter();
+    Double_t amin, edm, errdef;
+    Int_t nvpar, nparx;
+    fitter->GetStats(amin, edm, errdef, nvpar, nparx);
+    
+    int k = fitFunction->GetNpar();
+    double AIC = 2 * k + 2 * amin;
+    
+    return AIC;
 }
 
 int miglior_fit(){
-    std::string filename = "Dati/Acquisizione_notte_0503_51cm_histo.dat";
+    std::string filename = "Dati/Acquisizione_notte_1903_47cm_75deg.dat";
 
     // Timestamp di creazione del file
-    std::string timestamp_Co = "04.03.2025 18:20";
-    std::string duration_Co = "Durata: 96651319 ms #approx 26.8h";
+    std::string timestamp_Co = "18.03.2025 18:30";
+    std::string duration_Co = "Durata: 51993332 ms #approx 14.4h";
 
     // Vettori per memorizzare le ampiezze di impulo registrate nei canali
     std::vector<double> data_Co;
     readData(filename, data_Co);
 
-    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 22#circ. Distanza 51.5 cm", kBlue+2);
-    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 51.5 cm", kBlue+2);
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
 
     // Fit principale esponenziale
-    TF1* fitFunction = fit_exp(hCo);
+    TF1* fitFunction = fit_exp();
     TF1* fitFunctionpol5 = fit_pol5(hCo);
     TF1* fitFunctionpol4 = fit_pol4(hCo);
 
@@ -327,7 +280,7 @@ int miglior_fit(){
     std::cout << "Gaussiana 1: Media = " << mean1_pol4 << " +/- " << err_stat_mean1 << " (stat) +/- " << err_sist_mean1 << " (sist)" << std::endl;
     std::cout << "Gaussiana 2: Media = " << mean2_pol4 << " +/- " << err_stat_mean2 << " (stat) +/- " << err_sist_mean2 << " (sist)" << std::endl;
 
-    // Calcola l'integrale dell'istogramma hCo nella regione di interesse
+    // Calcola l'integrale dell'istogramma hCo nella regione di interesse    
     double integral = integrateHistogram(hCo);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
     addIntegral(cCo, integral);
