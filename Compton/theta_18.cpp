@@ -87,57 +87,54 @@ void addIntegral(TCanvas* canvas, double integral) {
     text->DrawText(0.1, 0.78, integralText.c_str());
 }
 
-TF1* fit_exp(){
-    std::string filename = "Dati/Acquisizione_notte_1903_47cm_75deg.dat";
-
-    // Timestamp di creazione del file
-    std::string timestamp_Co = "19.03.2025 18:30";
-    std::string duration_Co = "Durata: 51993332 ms #approx 14.4h";
-
-    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
-    std::vector<double> data_Co;
-    readData(filename, data_Co);
-
-    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
-    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
-
+TF1* fit_exp(TH1D* hCo){
     //Provo a fare fit esponenziale solo nella parte di fondo
-    TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 2850, 3800);
-    f1->SetParameter(0, 40); 
-    f1->SetParameter(1, 9e-7); 
-    hCo->Fit("f1","RLM+N","",2850,3750);  //N stands for NOT DRAWING
+    TF1 *f1 = new TF1("f1", "[0]*exp(-[1]*x)", 2750, 3000);
+    f1->SetParameter(0, 180); 
+    f1->SetParameter(1, 9e-4);
+    hCo->Fit("f1","RLM+N","",2750,3000); 
 
     // Estrai i parametri del fondo
     double p0 = f1->GetParameter(0);
     double p1 = f1->GetParameter(1);
     
     // Fit 2: Fondo esponenziale + prima gaussiana
-    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 2750, 5000);
-    fExp1Gaus->SetParameters(40, 9e-7, 40, 4200, 120);
+    TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 2750, 3500);
+    fExp1Gaus->SetParameters(p0, p1, 400, 3300, 80);
+    hCo->Fit("fExp1Gaus","RLM+N","", 2750, 3430); //N stands for NOT DRAWING
 
     double a0 = fExp1Gaus->GetParameter(0);
     double a1 = fExp1Gaus->GetParameter(1);
     double a2 = fExp1Gaus->GetParameter(2);
     double a3 = fExp1Gaus->GetParameter(3);
     double a4 = fExp1Gaus->GetParameter(4); 
-    
-    fExp1Gaus->SetParLimits(2, 40, 60); // Vincola ampiezza picco
-    fExp1Gaus->SetParLimits(4, 90, 120); // Vincola larghezza picco
-    
-    hCo->Fit("fExp1Gaus","RLM+","", 2900, 4500);
 
-    fExp1Gaus->SetParName(2, "A_1"); // Gaussian amplitude
-    fExp1Gaus->SetParName(3, "#mu_1");
-    fExp1Gaus->SetParName(4, "#sigma_1");
+    // Fit 3: Fondo esponenziale + prima gaussiana + seconda gaussiana
+    TF1* fExp2Gaus = new TF1("fExp2Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)+[5]*exp(-0.5*((x-[6])/[7])**2)", 2750, 410);
+    fExp2Gaus->SetParameters(a0, a1,  a2, a3, a4, 400, 3600, 80);
+    hCo->Fit("fExp2Gaus","LN","", 2750, 4250);
+
+    fExp2Gaus->SetParName(2, "A_1"); //ampiezza gaussiana
+    fExp2Gaus->SetParName(3, "#mu_1"); 
+    fExp2Gaus->SetParName(4, "#sigma_1");  
+    fExp2Gaus->SetParName(5, "A_2"); //ampiezza gaussiana
+    fExp2Gaus->SetParName(6, "#mu_2"); 
+    fExp2Gaus->SetParName(7, "#sigma_2");
+    
+    fExp2Gaus->SetParLimits(2, 350, 430); // Vincola ampiezza picco
+    fExp2Gaus->SetParLimits(4,  90, 150); // Vincola larghezza picco
+    fExp2Gaus->SetParLimits(5,  370, 460); // Vincola ampiezza picco
+    fExp2Gaus->SetParLimits(7,  90, 150); // Vincola larghezza picco
+
     gStyle->SetOptFit(1111);
-    return f1;
+    return fExp2Gaus;
 }
 
 TF1* fit_pol4(TH1D* hCo){
     // Fit a fifth-degree polynomial to the background part
     TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2750, 3000);
     f1->SetParameter(0, 50);
-    f1->SetParameter(1, 1e-2);
+    f1->SetParameter(1, 1e-5);
     f1->SetParameter(2, 1e-6);
     f1->SetParameter(3, 1e-7);
     f1->SetParameter(4, 1e-11);
@@ -156,20 +153,54 @@ TF1* fit_pol4(TH1D* hCo){
     f2->SetParameter(2, a2);
     f2->SetParameter(3, a3);
     f2->SetParameter(4, a4);
-    f2->SetParameter(5, 300);
+    f2->SetParameter(5, 400);
     f2->SetParameter(6, 3300);
-    f2->SetParameter(7, 199);
-    hCo->Fit("f2","RLMI+N","", 2750, 3400);
+    f2->SetParameter(7, 70);
+    hCo->Fit("f2","RLMI+N","", 2750, 3430);
 
-    f2->SetParName(5, "A_1"); // Gaussian amplitude
-    f2->SetParName(6, "#mu_1");
-    f2->SetParName(7, "#sigma_1");
+    double b0 = f2->GetParameter(0);
+    double b1 = f2->GetParameter(1);
+    double b2 = f2->GetParameter(2);
+    double b3 = f2->GetParameter(3);
+    double b4 = f2->GetParameter(4); 
+    double b5 = f2->GetParameter(5); 
+    double b6 = f2->GetParameter(6); 
+    double b7 = f2->GetParameter(7); 
+
+    //Fit totale
+    TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*TMath::Gaus(x, [6], [7]) + [8]*TMath::Gaus(x, [9], [10])", 2750, 4520);
+    f3->SetParameter(0, b0);
+    f3->SetParameter(1, b1);
+    f3->SetParameter(2, b2);
+    f3->SetParameter(3, b3);
+    f3->SetParameter(4, b4);
+    f3->SetParameter(5, b5);
+    f3->SetParameter(6, b6);
+    f3->SetParameter(7, b7);
+
+    f3->SetParameter(8, 400);
+    f3->SetParameter(9, 3600);
+    f3->SetParameter(10, 70);
+
+    f3->SetParLimits(5, 350, 430); // Vincola ampiezza picco
+    f3->SetParLimits(7,  90, 150); // Vincola larghezza picco
+    f3->SetParLimits(8,  370, 460); // Vincola ampiezza picco
+    f3->SetParLimits(10,  90, 150); // Vincola larghezza picco
+
+    f3->SetParName(5, "A_1"); // Gaussian amplitude
+    f3->SetParName(6, "#mu_1");
+    f3->SetParName(7, "#sigma_1");
+    f3->SetParName(8, "A_2"); // Gaussian amplitude
+    f3->SetParName(9, "#mu_2");
+    f3->SetParName(10, "#sigma_2");
+
+    hCo->Fit("f3","L","",2750, 4250);   
     gStyle->SetOptFit(1111);
-    return f2;
+    return f3;
 }
 
 TF1* fit_pol5(TH1D* hCo){
-    // Fit a fifth-degree polynomial to the background part
+     // Fit a fifth-degree polynomial to the background part
     TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5", 2750, 3000);
     f1->SetParameter(0, 50);
     f1->SetParameter(1, 1e-2);
@@ -194,18 +225,52 @@ TF1* fit_pol5(TH1D* hCo){
     f2->SetParameter(3, a3);
     f2->SetParameter(4, a4);
     f2->SetParameter(5, a5);
-    f2->SetParameter(6, 300);
+    f2->SetParameter(6, 450);
     f2->SetParameter(7, 3300);
-    f2->SetParameter(8, 159);
-    
-    f2->SetParName(6, "A_1"); // Gaussian amplitude
-    f2->SetParName(7, "#mu_1");
-    f2->SetParName(8, "#sigma_1");
+    f2->SetParameter(8, 100);
+    hCo->Fit("f2","RLM+N","", 2750, 3500);
 
-    hCo->Fit("f2","LN","", 2750, 3500);
+    double b0 = f2->GetParameter(0);
+    double b1 = f2->GetParameter(1);
+    double b2 = f2->GetParameter(2);
+    double b3 = f2->GetParameter(3);
+    double b4 = f2->GetParameter(4); 
+    double b5 = f2->GetParameter(5); 
+    double b6 = f2->GetParameter(6); 
+    double b7 = f2->GetParameter(7); 
+    double b8 = f2->GetParameter(8); 
 
+    //Fit totale
+    TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5 + [6]*TMath::Gaus(x, [7], [8]) + [9]*TMath::Gaus(x, [10], [11])", 2750, 4200);
+    f3->SetParameter(0, 50);
+    f3->SetParameter(1, 1e-2);
+    f3->SetParameter(2, 1e-6);
+    f3->SetParameter(3, 1e-7);
+    f3->SetParameter(4, 1e-11);
+    f3->SetParameter(5, 1e-14);
+    f3->SetParameter(6, 380);
+    f3->SetParameter(7, 3300);
+    f3->SetParameter(8, 100);
+
+    f3->SetParameter(9, 450);
+    f3->SetParameter(10, 3600);
+    f3->SetParameter(11, 100);
+
+    f3->SetParLimits(6, 350, 460); // Vincola ampiezza picco
+    f3->SetParLimits(8,  90, 150); // Vincola larghezza picco
+    f3->SetParLimits(9,  430, 460); // Vincola ampiezza picco
+    f3->SetParLimits(11,  90, 150); // Vincola larghezza picco
+
+    f3->SetParName(6, "A_1"); // Gaussian amplitude
+    f3->SetParName(7, "#mu_1");
+    f3->SetParName(8, "#sigma_1");
+    f3->SetParName(9, "A_2"); // Gaussian amplitude
+    f3->SetParName(10, "#mu_2");
+    f3->SetParName(11, "#sigma_2");
+
+    hCo->Fit("f3","LN","",2750, 4250);   
     gStyle->SetOptFit(1111);
-    return f2;
+    return f3;
 }
 
 double calculateAIC(TF1* fitFunction) {
@@ -220,12 +285,156 @@ double calculateAIC(TF1* fitFunction) {
     return AIC;
 }
 
-int miglior_fit(){
-    std::string filename = "Dati/Acquisizione_notte_1903_47cm_75deg.dat";
+void compare_fits_AIC() {
+    std::string filename = "Dati/Acquisizione_notte_2603_75deg.dat";
 
     // Timestamp di creazione del file
-    std::string timestamp_Co = "18.03.2025 18:30";
-    std::string duration_Co = "Durata: 51993332 ms #approx 14.4h";
+    std::string timestamp_Co = "25.03.2025 18:20";
+    std::string duration_Co = "Durata: 52245937 ms #approx 14.0h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+    
+    // Fit principale esponenziale
+    TF1* fitFunctionExp = fit_exp(hCo);
+    TF1* fitFunctionPol5 = fit_pol5(hCo);
+    TF1* fitFunctionPol4 = fit_pol4(hCo);
+
+    // Calcolo dell'AIC per ciascun fit
+    double AIC_exp = calculateAIC(fitFunctionExp);
+    double AIC_pol5 = calculateAIC(fitFunctionPol5);
+    double AIC_pol4 = calculateAIC(fitFunctionPol4);
+
+    // Stampa i valori dell'AIC
+    std::cout << "AIC modello esponenziale: " << AIC_exp << std::endl;
+    std::cout << "AIC modello polinomiale di 5° grado: " << AIC_pol5 << std::endl;
+    std::cout << "AIC modello polinomiale di 4° grado: " << AIC_pol4 << std::endl;
+}
+
+std::pair<double, double> evaluate_systematic_error(TH1D* hCo, double x_min, double x_max, double delta) {
+    std::vector<double> mu1_values;
+    std::vector<double> mu2_values;
+
+    // Fit a fifth-degree polynomial to the background part
+    TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2750, 3000);
+    
+    f1->SetParameter(0, 50);
+    f1->SetParameter(1, 1e-5);
+    f1->SetParameter(2, 1e-6);
+    f1->SetParameter(3, 1e-7);
+    f1->SetParameter(4, 1e-11);
+    hCo->Fit("f1","RLMI+N","",2750, 3000); 
+
+    double a0 = f1->GetParameter(0);
+    double a1 = f1->GetParameter(1);
+    double a2 = f1->GetParameter(2);
+    double a3 = f1->GetParameter(3);
+    double a4 = f1->GetParameter(4); 
+
+    // Fit 2
+    TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*exp(-0.5*((x-[6])/[7])**2)", 2750, 3850);
+    f2->SetParameter(0, a0);
+    f2->SetParameter(1, a1);
+    f2->SetParameter(2, a2);
+    f2->SetParameter(3, a3);
+    f2->SetParameter(4, a4);
+    f2->SetParameter(5, 400);
+    f2->SetParameter(6, 3300);
+    f2->SetParameter(7, 70);
+    hCo->Fit("f2","RLMI+N","", 2750, 3430);
+
+    double b0 = f2->GetParameter(0);
+    double b1 = f2->GetParameter(1);
+    double b2 = f2->GetParameter(2);
+    double b3 = f2->GetParameter(3);
+    double b4 = f2->GetParameter(4); 
+    double b5 = f2->GetParameter(5); 
+    double b6 = f2->GetParameter(6); 
+    double b7 = f2->GetParameter(7); 
+
+    // Variazione degli estremi del dominio
+    for (double dx = -delta; dx <= delta; dx += delta) { //in pratica controlla -dx, 0, dx!
+        TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*TMath::Gaus(x, [6], [7]) + [8]*TMath::Gaus(x, [9], [10])", x_min + dx, x_max + dx);
+        f3->SetParameter(0, b0);
+        f3->SetParameter(1, b1);
+        f3->SetParameter(2, b2);
+        f3->SetParameter(3, b3);
+        f3->SetParameter(4, b4);
+        f3->SetParameter(5, b5);
+        f3->SetParameter(6, b6);
+        f3->SetParameter(7, b7);
+    
+        f3->SetParameter(8, 400);
+        f3->SetParameter(9, 3600);
+        f3->SetParameter(10, 70);
+    
+        f3->SetParLimits(5, 350, 430); // Vincola ampiezza picco
+        f3->SetParLimits(7,  90, 150); // Vincola larghezza picco
+        f3->SetParLimits(8,  370, 460); // Vincola ampiezza picco
+        f3->SetParLimits(10,  90, 150); // Vincola larghezza picco
+        hCo->Fit("f3", "LN", "", x_min + dx, x_max + dx);
+        
+        double mu1 = f3->GetParameter(6);
+        double mu2 = f3->GetParameter(9);
+
+        mu1_values.push_back(mu1);
+        mu2_values.push_back(mu2);
+
+        delete f3;
+    }
+
+    // Calcolo della deviazione standard delle medie
+    double mean_mu1 = std::accumulate(mu1_values.begin(), mu1_values.end(), 0.0) / mu1_values.size();
+    double mean_mu2 = std::accumulate(mu2_values.begin(), mu2_values.end(), 0.0) / mu2_values.size();
+
+    double std_dev_mu1 = std::sqrt(std::accumulate(mu1_values.begin(), mu1_values.end(), 0.0, [mean_mu1](double sum, double val) {
+        return sum + (val - mean_mu1) * (val - mean_mu1);
+    }) / mu1_values.size());
+
+    double std_dev_mu2 = std::sqrt(std::accumulate(mu2_values.begin(), mu2_values.end(), 0.0, [mean_mu2](double sum, double val) {
+        return sum + (val - mean_mu2) * (val - mean_mu2);
+    }) / mu2_values.size());
+
+    // Calcolo dell'errore sistematico in percentuale
+    double perc_error_mu1 = fabs(std_dev_mu1 / mean_mu1) * 100;
+    double perc_error_mu2 = fabs(std_dev_mu2 / mean_mu2) * 100;
+
+    return std::make_pair(std_dev_mu1, std_dev_mu2);
+}
+
+void test_systematic_error() {
+    // Esempio di utilizzo
+    std::string filename = "Dati//Acquisizione_notte_2603_75deg.dat";
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+
+    double x_min = 2750;
+    double x_max = 4250;
+
+    auto errors_5= evaluate_systematic_error(hCo, x_min, x_max, 5);    
+    auto errors_10 = evaluate_systematic_error(hCo, x_min, x_max, 10);
+    auto errors_50 = evaluate_systematic_error(hCo, x_min, x_max, 50);
+    auto errors_100 = evaluate_systematic_error(hCo, x_min, x_max, 100);
+    
+    std::cout << "Errore sistematico variazione di 5 canali sulla media del primo picco perc: " << errors_5.first << std::endl;
+    std::cout << "Errore sistematico variazione di 5 canali sulla media del secondo picco perc: " << errors_5.second << std::endl;
+    std::cout << "Errore sistematico variazione di 10 canali sulla media del primo picco perc: " << errors_10.first << std::endl;
+    std::cout << "Errore sistematico variazione di 10 canali sulla media del secondo picco perc: " << errors_10.second << std::endl;
+    std::cout << "Errore sistematico variazione di 50 canali sulla media del primo picco perc: " << errors_50.first << std::endl;
+    std::cout << "Errore sistematico variazione di 50 canali sulla media del secondo picco perc: " << errors_50.second << std::endl;
+}
+
+int miglior_fit(){
+    std::string filename = "Dati/Acquisizione_notte_2603_75deg.dat";
+
+    // Timestamp di creazione del file
+    std::string timestamp_Co = "25.03.2025 18:20";
+    std::string duration_Co = "Durata: 52245937 ms #approx 14.0h";
 
     // Vettori per memorizzare le ampiezze di impulo registrate nei canali
     std::vector<double> data_Co;
@@ -234,17 +443,17 @@ int miglior_fit(){
     TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
     TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
 
-    // Fit principale esponenziale
-    TF1* fitFunction = fit_exp();
+    // Fit principale 
+    TF1* fitFunction = fit_exp(hCo);
     TF1* fitFunctionpol5 = fit_pol5(hCo);
     TF1* fitFunctionpol4 = fit_pol4(hCo);
 
     TCanvas* cCo = new TCanvas("cCo","Istogrammi Occorrenze Canali Co");
     cCo->cd();
-    hCo->Draw();
+    hCo->Draw("E");
     addTimestamp(cCo, timestamp_Co, duration_Co);
 
-    // Disegna il fit esponenziale sovrapposto sul grafico
+    // Disegna il fit principale sul grafico
     fitFunctionpol4->SetLineColor(kRed);
     fitFunctionpol4->Draw("same");
 
@@ -277,8 +486,20 @@ int miglior_fit(){
     double err_sist_mean1 = (max_diff1-min_diff1) / 2.0;
     double err_sist_mean2 = (max_diff2-min_diff2) / 2.0;
 
-    std::cout << "Gaussiana 1: Media = " << mean1_pol4 << " +/- " << err_stat_mean1 << " (stat) +/- " << err_sist_mean1 << " (sist)" << std::endl;
-    std::cout << "Gaussiana 2: Media = " << mean2_pol4 << " +/- " << err_stat_mean2 << " (stat) +/- " << err_sist_mean2 << " (sist)" << std::endl;
+    // Calcola l'errore dovuto alla scelta degli estremi (delta di 5)
+    auto errors_delta5 = evaluate_systematic_error(hCo, 2750, 4250, 5);
+    double err_delta5_mean1 = errors_delta5.first;
+    double err_delta5_mean2 = errors_delta5.second;
+
+    // Somma in quadratura degli errori
+    double total_err_mean1 = err_sist_mean1 +err_delta5_mean1;
+    double total_err_mean2 = err_sist_mean2 +err_delta5_mean2;
+    std::cout << "Estremi 1: Media = " << err_delta5_mean1 << std::endl;
+    std::cout << "Estremi 2: Media = " << err_delta5_mean2 << std::endl;
+    std::cout << "Sistematici 1: Media = " << err_sist_mean1 << std::endl;
+    std::cout << "Sistematici 2: Media = " << err_sist_mean2 << std::endl;
+    std::cout << "Gaussiana 1: Media = " << mean1_pol4 << " +/- " << err_stat_mean1 << " (stat) +/- " << total_err_mean1 << " (sist)" << std::endl;
+    std::cout << "Gaussiana 2: Media = " << mean2_pol4 << " +/- " << err_stat_mean2 << " (stat) +/- " << total_err_mean2 << " (sist)" << std::endl;
 
     // Calcola l'integrale dell'istogramma hCo nella regione di interesse    
     double integral = integrateHistogram(hCo);

@@ -601,8 +601,8 @@ std::pair<double, double> evaluate_systematic_error(TH1D* hCo, double x_min, dou
     }) / mu2_values.size());
 
     // Calcolo dell'errore sistematico in percentuale
-    //double perc_error_mu1 = (std_dev_mu1 / mean_mu1) * 100;
-    //double perc_error_mu2 = (std_dev_mu2 / mean_mu2) * 100;
+    double perc_error_mu1 = (std_dev_mu1 / mean_mu1) * 100;
+    double perc_error_mu2 = (std_dev_mu2 / mean_mu2) * 100;
 
     return std::make_pair(std_dev_mu1, std_dev_mu2);
 }
@@ -644,14 +644,13 @@ int miglior_fit(){
     TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
     TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
 
-    // Fit principale 
     TF1* fitFunction = fit_exp(hCo);
     TF1* fitFunctionpol5 = fit_pol5(hCo);
     TF1* fitFunctionpol4 = fit_pol4(hCo);
 
     TCanvas* cCo = new TCanvas("cCo","Istogrammi Occorrenze Canali Co");
     cCo->cd();
-    hCo->Draw();
+    hCo->Draw("E");
     addTimestamp(cCo, timestamp_Co, duration_Co);
 
     // Disegna il fit principale sul grafico
@@ -704,6 +703,68 @@ int miglior_fit(){
     double integral = integrateHistogram(hCo);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
     addIntegral(cCo, integral);
+
+    return 0;
+}
+
+// Function to calculate Fisher information for a histogram
+double calculateFisherInformation(TH1D* hist) {
+    double fisherInformation = 0.0;
+    int nBins = hist->GetNbinsX();
+
+    for (int i = 1; i <= nBins; ++i) {
+        double count = hist->GetBinContent(i);
+        if (count > 0) {
+            fisherInformation += 1.0 / count;
+        }
+    }
+
+    return fisherInformation;
+}
+
+double calculateKLDivergence(TH1D* hOriginal, TH1D* hRebinned) {
+    double klDivergence = 0.0;
+    int nBinsOriginal = hOriginal->GetNbinsX();
+    int nBinsRebinned = hRebinned->GetNbinsX();
+
+    if (nBinsOriginal != nBinsRebinned) {
+        std::cerr << "Error: Histograms must have the same number of bins to calculate KL divergence." << std::endl;
+        return klDivergence;
+    }
+
+    for (int i = 1; i <= nBinsOriginal; ++i) {
+        double p = hOriginal->GetBinContent(i);
+        double q = hRebinned->GetBinContent(i);
+
+        if (p > 0 && q > 0) {
+            klDivergence += p * std::log(p / q);
+        }
+    }
+
+    return klDivergence;
+}
+
+int loss_information() {
+    std::string filename = "Dati/Acquisizione_notte_1203_47cm_histo.dat";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data;
+    readData(filename, data);
+
+    TH1D* hOriginal = histogram(data, "hOriginal", "Original Histogram", kBlue+2);
+    TH1D* hRebinned = histogram_nonrebin(data, "hRebinned", kRed+2);
+
+    double fisherInfoOriginal = calculateFisherInformation(hOriginal);
+    double fisherInfoRebinned = calculateFisherInformation(hRebinned);
+
+    double lossOfInformation = fisherInfoOriginal - fisherInfoRebinned;
+    double klDivergence = calculateKLDivergence(hOriginal, hRebinned);
+
+    std::cout << "Fisher Information (Original): " << fisherInfoOriginal << std::endl;
+    std::cout << "Fisher Information (Rebinned): " << fisherInfoRebinned << std::endl;
+    std::cout << "Loss of Fisher Information: " << lossOfInformation << std::endl;
+    std::cout << "KL Divergence (Original || Rebinned): " << klDivergence << std::endl;
+    //both histograms in your example are equivalent;  you do not loose any information at all, since the mapping is bijective
 
     return 0;
 }
