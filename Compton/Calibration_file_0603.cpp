@@ -126,11 +126,9 @@ int calibration() {
     gStyle->SetOptFit(1111);
 
     // Aggiungi il valore di mu alla lista
-    double mu_Cs = f1->GetParameter(3);
-    double mu_err_Cs = f1->GetParError(3);
+    double mu_Cs = f1->GetParameter(7);
+    double mu_err_Cs = f1->GetParError(7);
     double energy_Cs = 662e3;
-    
-    cCs->SaveAs("Risultati/CalCs_0603.pdf");
 
     /*-------------------------------------------------------------------------*/
 
@@ -141,17 +139,17 @@ int calibration() {
 
     TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5 + [6]*TMath::Gaus(x, [7], [8]) + [9]*TMath::Gaus(x, [10], [11])", 3250, 4950);
 
-    f2->SetParameter(0, 881); //ci metto quelli trovati dal primo fit esponenziale
+    f2->SetParameter(0, 100); //ci metto quelli trovati dal primo fit esponenziale
     f2->SetParameter(1, -0.05);
     f2->SetParameter(2, -6.399e-5);
     f2->SetParameter(3, -1.337e-8);
     f2->SetParameter(4, 4e-12);
     f2->SetParameter(5, 1e-16);
    
-    f2->SetParameter(6, 300);
+    f2->SetParameter(6, 800);
     f2->SetParameter(7, 4150);
     f2->SetParameter(8, 70);
-    f2->SetParameter(9, 196);
+    f2->SetParameter(9, 600);
     f2->SetParameter(10, 4715);
     f2->SetParameter(11, 108);
 
@@ -173,7 +171,6 @@ int calibration() {
     double mu_err_Co2 = f2->GetParError(10);
     double energy_Co2 = 1.33e6;
 
-    cCo->SaveAs("Risultati/CalCo_0603.pdf");
     /*-------------------------------------------------------------------------*/
 
     TCanvas* cNa = new TCanvas("cNa","Istogrammi Occorrenze Canali Na");
@@ -205,7 +202,7 @@ int calibration() {
     fFinal->SetParameters(a0, a1, a2, a3, a4, 20, 4500, 75);
     fFinal->SetParLimits(6, 4200, 4800); // Vincola la media del secondo picco
     fFinal->SetParLimits(7, 50, 80); // Vincola la media del secondo picco
-    hNa->Fit("fFinal","L","", 1000, 5000);
+    hNa->Fit("fFinal","L","", 1250, 4820);
     gStyle->SetOptFit(1111);
 
     fFinal->SetParName(2, "A1");
@@ -221,61 +218,57 @@ int calibration() {
     double energy_Na1 = 551e3;
     double mu_Na2 = fFinal->GetParameter(6);
     double mu_err_Na2 = fFinal->GetParError(6);
-    double energy_Na2 = 1274e3;
+    double energy_Na2 =1274e3; //keV
 
-    cNa->SaveAs("Risultati/CalNa_0603.pdf");
     /*-------------------------------------------------------------------------*/
-    // Creare grafici separati per Cs, Co e Na
-    TCanvas* cFit = new TCanvas("cFit","Funzione di calibrazione");
-    TMultiGraph* mg = new TMultiGraph();
+    double min_mu = std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
+    double max_mu = std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
 
-    TGraphErrors* graphCs = new TGraphErrors(1);
-    graphCs->SetPoint(0, energy_Cs, mu_Cs);
-    graphCs->SetPointError(0, 0, mu_err_Cs);
-    graphCs->SetMarkerColor(kGreen + 2);
-    graphCs->SetMarkerStyle(20);
-    graphCs->SetMarkerSize(1.0);
-    mg->Add(graphCs);
+    // Creare grafici separati per Cs, Co e Na    
+    TCanvas* cFit = new TCanvas("cFit", "Funzione di calibrazione");
+    TGraphErrors* mg = new TGraphErrors(4);
+    mg->SetMarkerStyle(21);
 
-    TGraphErrors* graphCo = new TGraphErrors(2);
-    graphCo->SetPoint(0, energy_Co1, mu_Co1);
-    graphCo->SetPointError(0, 0, mu_err_Co1);
-    graphCo->SetPoint(1, energy_Co2, mu_Co2);
-    graphCo->SetPointError(1, 0, mu_err_Co2);
-    graphCo->SetMarkerColor(kBlue + 2);
-    graphCo->SetMarkerStyle(20);
-    graphCo->SetMarkerSize(1.0);
-    mg->Add(graphCo);
+    mg->SetPoint(0, mu_Cs, energy_Cs / 1e3);
+    mg->SetPointError(0, mu_err_Cs, 0.);
 
-    TGraphErrors* graphNa = new TGraphErrors(2);
-    graphNa->SetPoint(0, energy_Na1, mu_Na1);
-    graphNa->SetPointError(0, 0, mu_err_Na1);
-    graphNa->SetPoint(1, energy_Na2, mu_Na2);
-    graphNa->SetPointError(1, 0, mu_err_Na2);
-    graphNa->SetMarkerColor(kRed + 2);
-    graphNa->SetMarkerStyle(20);
-    graphNa->SetMarkerSize(1.0);
-    mg->Add(graphNa);
+    mg->SetPoint(1, mu_Co1, energy_Co1 / 1e3);
+    mg->SetPointError(1, mu_err_Co1, 0.);
+    mg->SetPoint(2, mu_Co2, energy_Co2 / 1e3);
+    mg->SetPointError(2, mu_err_Co2, 0.);
 
+    mg->SetPoint(3, mu_Na1, energy_Na1 / 1e3);
+    mg->SetPointError(3, mu_err_Na1, 0.);
+    mg->SetPoint(4, mu_Na2, energy_Na2 / 1e3);
+    mg->SetPointError(4, mu_err_Na2, 0.);
+
+
+    std::cout<< mu_Cs<< " "<< mu_err_Cs<< std::endl;
+    std::cout<< mu_Co1<< " "<< mu_err_Co1<< std::endl;
+    std::cout<< mu_Co2<< " "<< mu_err_Co2<< std::endl;
+    std::cout<< mu_Na1<< " "<< mu_err_Na1<< std::endl;
+    std::cout<< mu_Na2<< " "<< mu_err_Na2<< std::endl;
+
+    mg->SetMarkerStyle(8);
+    mg->SetMarkerSize(1);
+    mg->SetMarkerColor(kAzure -9);
+    mg->SetLineColor(kAzure -9);
     mg->Draw("AP");
 
+    TF1* fit = new TF1("fit", "pol1", min_mu, max_mu); // Adjust range as needed
+    
+    fit->SetParameters(0,1/3);
+    mg->Fit(fit, "WQN");
+    mg->Fit(fit); // "final fit"
+
+    // Draw fit line
+    fit->SetLineColor(kRed);
+    fit->SetLineStyle(1);
+    fit->Draw("same");
+
     mg->SetTitle("Funzione di calibrazione");
-
-    // Fit lineare
-    TF1* fit = new TF1("fit", "pol1", std::min({energy_Cs, energy_Co1, energy_Co2, energy_Na1, energy_Na2}), std::max({energy_Cs, energy_Co1, energy_Co2, energy_Na1, energy_Na2}));
-    mg->Fit(fit);
-    gStyle->SetOptFit(1111);
-
-    mg->GetXaxis()->SetTitle("Energie [eV]");
-    mg->GetYaxis()->SetTitle("Canali dei picchi");
-
-    // Legenda
-    TLegend* legend = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend->AddEntry(graphCs, "137Cs");
-    legend->AddEntry(graphCo, "60Co");
-    legend->AddEntry(graphNa, "22Na");
-    legend->Draw();
-
-    cFit->SaveAs("Risultati/Calibration_0603.pdf");
+    addTimestamp(cFit, timestamp_Na);
+    mg->GetXaxis()->SetTitle("Canali dei picchi");
+    mg->GetYaxis()->SetTitle("Energie [keV]");
     return 0;
 }
