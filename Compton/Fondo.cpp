@@ -56,7 +56,7 @@ TH1D* histogram(std::vector<double>& channels, const char* hist_name, const char
         h1->SetBinContent(i+1, channels[i]);
     }
     
-    TH1D* h1Rebinned2 = dynamic_cast<TH1D*>(h1->Rebin(1, hist_name));
+    TH1D* h1Rebinned2 = dynamic_cast<TH1D*>(h1->Rebin(4, hist_name));
     h1Rebinned2->SetLineColor(color);
     h1Rebinned2->GetXaxis()->SetTitle("Canali");
     h1Rebinned2->GetYaxis()->SetTitle("Conteggi");
@@ -110,6 +110,87 @@ int print_bkg(){
     double integral = integrateHistogram(hCo_nonrebin);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
     addIntegral(cCo, integral);
+
+    return 0;
+}
+
+
+int print_bkg2(){
+    std::string filename = "Dati/Compton_T251_70deg_1203_47cmPMT2SIMULATOCONTARGET.dat";
+
+    // Timestamp di creazione del file
+    std::string timestamp_Co = "12.03.2025 17:00";
+    std::string duration_Co = "Durata: 2240833 ms #approx 1h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
+
+    TCanvas* cCo = new TCanvas("cCo","Istogrammi Occorrenze Canali Co");
+    cCo->cd();
+    hCo->Draw();
+    addTimestamp(cCo, timestamp_Co, duration_Co);
+
+    filename = "Dati/Compton_T256_70deg_1203_47cmPMT2SIMULATO.dat";
+
+    // Timestamp di creazione del file
+    timestamp_Co = "12.03.2025 15:30";
+    duration_Co = "Durata: 2240833 ms #approx 1h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co2;
+    readData(filename, data_Co2);
+
+    TH1D* hCo_nonrebin2 = histogram_nonrebin(data_Co2, "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm senza target", kBlue+2);
+    TH1D* hCo2 = histogram(data_Co2, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm senza target", kBlue+2);
+
+    TCanvas* cCo2 = new TCanvas("cCo2","Istogrammi Occorrenze Canali Co senza target");
+    cCo2->cd();
+    hCo2->Draw();
+    addTimestamp(cCo2, timestamp_Co, duration_Co);
+
+    return 0;
+}
+
+int print(){
+    std::string filename = "Dati/Acquisizione_notte_1203_47cm_histo.dat";
+
+    // Timestamp di creazione del file
+    std::string timestamp_Co = "12.03.2025 18:30";
+    std::string duration_Co = "Durata: 93748315 ms #approx 26h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
+
+    TCanvas* cCo = new TCanvas("cCo","Istogrammi Occorrenze Canali Co");
+    cCo->cd();
+    hCo->Draw();
+    addTimestamp(cCo, timestamp_Co, duration_Co);
+
+    filename = "Dati/Compton_T256_70deg_1203_47cmPMT2SIMULATO.dat";
+
+    // Timestamp di creazione del file
+    timestamp_Co = "12.03.2025 15:30";
+    duration_Co = "Durata: 2240833 ms #approx 1h";
+
+    // Vettori per memorizzare le ampiezze di impulo registrate nei canali
+    std::vector<double> data_Co2;
+    readData(filename, data_Co2);
+
+    TH1D* hCo_nonrebin2 = histogram_nonrebin(data_Co2, "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm simulazione", kBlue+2);
+    TH1D* hCo2 = histogram(data_Co2, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm PMT2 simulato", kBlue+2);
+
+    TCanvas* cCo2 = new TCanvas("cCo2","Istogrammi Occorrenze Canali Co senza target");
+    cCo2->cd();
+    hCo2->Draw();
+    addTimestamp(cCo2, timestamp_Co, duration_Co);
 
     return 0;
 }
