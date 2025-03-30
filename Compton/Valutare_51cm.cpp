@@ -267,6 +267,115 @@ TF1* fit_pol5(TH1D* hCo){
     return f3;
 }
 
+std::pair<double, double> evaluate_systematic_error(TH1D* hCo, double x_min, double x_max, double delta) {
+    std::vector<double> mu1_values;
+    std::vector<double> mu2_values;
+
+     // Fit a fifth-degree polynomial to the background part
+     TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2620, 3150);
+     f1->SetParameter(0, 50);
+     f1->SetParameter(1, 1e-2);
+     f1->SetParameter(2, 1e-6);
+     f1->SetParameter(3, 1e-7);
+     f1->SetParameter(4, 1e-11);
+     hCo->Fit("f1","RLM+N","",2800, 3150); 
+ 
+     double a0 = f1->GetParameter(0);
+     double a1 = f1->GetParameter(1);
+     double a2 = f1->GetParameter(2);
+     double a3 = f1->GetParameter(3);
+     double a4 = f1->GetParameter(4); 
+ 
+     // Fit 2
+     TF1* f2 = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*exp(-0.5*((x-[6])/[7])**2)", 2800, 3683);
+     f2->SetParameter(0, a0);
+     f2->SetParameter(1, a1);
+     f2->SetParameter(2, a2);
+     f2->SetParameter(3, a3);
+     f2->SetParameter(4, a4);
+     f2->SetParameter(5, 40);
+     f2->SetParameter(6, 3283);
+     f2->SetParameter(7, 199);
+     hCo->Fit("f2","RLMI+N","", 2800, 3683);
+ 
+     double b0 = f2->GetParameter(0);
+     double b1 = f2->GetParameter(1);
+     double b2 = f2->GetParameter(2);
+     double b3 = f2->GetParameter(3);
+     double b4 = f2->GetParameter(4); 
+     double b5 = f2->GetParameter(5); 
+     double b6 = f2->GetParameter(6); 
+     double b7 = f2->GetParameter(7); 
+ 
+    // Variazione degli estremi del dominio
+    for (double dx = -delta; dx <= delta; dx += delta) { //in pratica controlla -dx, 0, dx!
+        TF1* f3 = new TF1("f3", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*TMath::Gaus(x, [6], [7]) + [8]*TMath::Gaus(x, [9], [10])", x_min + dx, x_max + dx);
+        f3->SetParameter(0, b0);
+        f3->SetParameter(1, b1);
+        f3->SetParameter(2, b2);
+        f3->SetParameter(3, b3);
+        f3->SetParameter(4, b4);
+        f3->SetParameter(5, b5);
+        f3->SetParameter(6, b6);
+        f3->SetParameter(7, b7);
+    
+        f3->SetParameter(8, 51);
+        f3->SetParameter(9, 3875);
+        f3->SetParameter(10, 142);
+        f3->SetParLimits(10, 140, 150); 
+        hCo->Fit("f3", "LN", "", x_min + dx, x_max + dx);
+        
+        double mu1 = f3->GetParameter(6);
+        double mu2 = f3->GetParameter(9);
+
+        mu1_values.push_back(mu1);
+        mu2_values.push_back(mu2);
+
+        delete f3;
+    }
+
+    // Calcolo della deviazione standard delle medie
+    double mean_mu1 = std::accumulate(mu1_values.begin(), mu1_values.end(), 0.0) / mu1_values.size();
+    double mean_mu2 = std::accumulate(mu2_values.begin(), mu2_values.end(), 0.0) / mu2_values.size();
+
+    double std_dev_mu1 = std::sqrt(std::accumulate(mu1_values.begin(), mu1_values.end(), 0.0, [mean_mu1](double sum, double val) {
+        return sum + (val - mean_mu1) * (val - mean_mu1);
+    }) / mu1_values.size());
+
+    double std_dev_mu2 = std::sqrt(std::accumulate(mu2_values.begin(), mu2_values.end(), 0.0, [mean_mu2](double sum, double val) {
+        return sum + (val - mean_mu2) * (val - mean_mu2);
+    }) / mu2_values.size());
+
+    // Calcolo dell'errore sistematico in percentuale
+    double perc_error_mu1 = (std_dev_mu1 / mean_mu1) * 100;
+    double perc_error_mu2 = (std_dev_mu2 / mean_mu2) * 100;
+
+    return std::make_pair(std_dev_mu1, std_dev_mu2);
+}
+
+void test_systematic_error() {
+    // Esempio di utilizzo
+    std::string filename = "Dati/Acquisizione_notte_1203_47cm_histo.dat";
+    std::vector<double> data_Co;
+    readData(filename, data_Co);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 47 cm", kBlue+2);
+
+    double x_min = 2750;
+    double x_max = 4520;
+
+    auto errors_5= evaluate_systematic_error(hCo, x_min, x_max, 5);    
+    auto errors_10 = evaluate_systematic_error(hCo, x_min, x_max, 10);
+    auto errors_50 = evaluate_systematic_error(hCo, x_min, x_max, 50);
+    auto errors_100 = evaluate_systematic_error(hCo, x_min, x_max, 100);
+    
+    std::cout << "Errore sistematico variazione di 5 canali sulla media del primo picco perc: " << errors_5.first << std::endl;
+    std::cout << "Errore sistematico variazione di 5 canali sulla media del secondo picco perc: " << errors_5.second << std::endl;
+    std::cout << "Errore sistematico variazione di 10 canali sulla media del primo picco perc: " << errors_10.first << std::endl;
+    std::cout << "Errore sistematico variazione di 10 canali sulla media del secondo picco perc: " << errors_10.second << std::endl;
+    std::cout << "Errore sistematico variazione di 50 canali sulla media del primo picco perc: " << errors_50.first << std::endl;
+    std::cout << "Errore sistematico variazione di 50 canali sulla media del secondo picco perc: " << errors_50.second << std::endl;
+}
+
 int miglior_fit(){
     std::string filename = "Dati/Acquisizione_notte_0503_51cm_histo.dat";
 
@@ -323,11 +432,20 @@ int miglior_fit(){
 
     double err_sist_mean1 = (max_diff1-min_diff1) / 2.0;
     double err_sist_mean2 = (max_diff2-min_diff2) / 2.0;
+    
+    // Calcola l'errore dovuto alla scelta degli estremi (delta di 5)
+    auto errors_delta5 = evaluate_systematic_error(hCo, 2800, 4400, 5);
+    double err_delta5_mean1 = errors_delta5.first;
+    double err_delta5_mean2 = errors_delta5.second;
 
-    std::cout << "Gaussiana 1: Media = " << mean1_pol4 << " +/- " << err_stat_mean1 << " (stat) +/- " << err_sist_mean1 << " (sist)" << std::endl;
-    std::cout << "Gaussiana 2: Media = " << mean2_pol4 << " +/- " << err_stat_mean2 << " (stat) +/- " << err_sist_mean2 << " (sist)" << std::endl;
+    // Somma in quadratura degli errori
+    double total_err_mean1 = err_sist_mean1 +err_delta5_mean1;
+    double total_err_mean2 = err_sist_mean2 +err_delta5_mean2;
 
-    // Calcola l'integrale dell'istogramma hCo nella regione di interesse
+    std::cout << "Gaussiana 1: Media = " << mean1_pol4 << " +/- " << err_stat_mean1 << " (stat) +/- " << total_err_mean1 << " (sist)" << std::endl;
+    std::cout << "Gaussiana 2: Media = " << mean2_pol4 << " +/- " << err_stat_mean2 << " (stat) +/- " << total_err_mean2 << " (sist)" << std::endl;
+
+    // Calcola l'integrale dell'istogramma hCo nella regione di interesse    
     double integral = integrateHistogram(hCo);
     std::cout << "Integrale dell'istogramma = " << integral <<" conteggi "<< std::endl;
     addIntegral(cCo, integral);

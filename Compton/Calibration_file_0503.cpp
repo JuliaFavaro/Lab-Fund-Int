@@ -110,10 +110,10 @@ int calibration() {
 
     // Fit 2: Fondo esponenziale + prima gaussiana
     TF1* fExp1Gaus = new TF1("fExp1Gaus", "[0]*exp(-[1]*x) + [2]*exp(-0.5*((x-[3])/[4])**2)", 1650, 2800);
-    fExp1Gaus->SetParameters(1e7, 0.005, 16000, 2420, 81);
+    //fExp1Gaus->SetParameters(1e7, 0.005, 16000, 2420, 81);
+    fExp1Gaus->SetParameters(1e7, 0.005, 8000, 2420, 81);
 
-    //fExp1Gaus->SetParLimits(2, 16000, 17000); // Vincola la ampiezza del secondo picco
-    //fExp1Gaus->SetParLimits(4, 60, 85); // Vincola la larghezza del secondo picco
+    fExp1Gaus->SetParLimits(4, 60, 85); // Vincola la larghezza del secondo picco
 
     fExp1Gaus->SetParName(2, "A_1"); //ampiezza gaussiana
     fExp1Gaus->SetParName(3, "#mu_1"); 
@@ -214,8 +214,9 @@ int calibration() {
     fFinal->SetParName(10, "#mu_2");
     fFinal->SetParName(11, "#sigma_2");
     
-    fFinal->SetParLimits(10, 4420, 4480);
-    hNa->Fit("fFinal","L","", 1150, 5000);
+    fFinal->SetParLimits(9, 30, 50);
+    fFinal->SetParLimits(11, 70, 90);
+    hNa->Fit("fFinal","L","", 1250, 4820);
 
     gStyle->SetOptFit(1111);
 
@@ -226,75 +227,10 @@ int calibration() {
     
     double mu_Na2 = fFinal->GetParameter(10);
     double mu_err_Na2= fFinal->GetParError(10);
-    double energy_Na2 = 551e3*2; //keV
+    double energy_Na2 =1274e3; //keV
 
     /*-------------------------------------------------------------------------*/
     
-    /*
-    double min_mu = std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
-    double max_mu = std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
-
-    // Creare grafici separati per Cs, Co e Na    
-    TCanvas* cFit = new TCanvas("cFit", "Funzione di calibrazione");
-    TMultiGraph* mg = new TMultiGraph();
-
-    if (!std::isnan(mu_Cs) && !std::isinf(mu_Cs)) {
-        TGraphErrors* graphCs = new TGraphErrors(1);
-        graphCs->SetMarkerStyle(21);
-        //graphCs->SetPoint(0, mu_Cs, energy_Cs / 1e3);
-        //graphCs->SetPointError(0, mu_err_Cs, 0);
-        graphCs->SetMarkerColor(kGreen + 2);
-        graphCs->SetMarkerStyle(20);
-        graphCs->SetMarkerSize(1.0);
-        mg->Add(graphCs);
-    } else {
-        std::cerr << "mu_Cs is NaN or Inf" << std::endl;
-    }
-
-    TGraphErrors* graphCo = new TGraphErrors(2);
-    graphCo->SetMarkerStyle(21);
-    graphCo->SetPoint(0, mu_Co1, energy_Co1 / 1e3);
-    graphCo->SetPointError(0, mu_err_Co1, 0);
-    graphCo->SetPoint(1, mu_Co2, energy_Co2 / 1e3);
-    graphCo->SetPointError(1, mu_err_Co2, 0);
-    graphCo->SetMarkerColor(kBlue + 2);
-    graphCo->SetMarkerStyle(20);
-    graphCo->SetMarkerSize(1.0);
-    mg->Add(graphCo);
-
-
-    if (!std::isnan(mu_Na1) && !std::isinf(mu_Na1)) {
-        TGraphErrors* graphNa = new TGraphErrors(1);
-        graphNa->SetMarkerStyle(21);
-        graphNa->SetPoint(0, mu_Na1, energy_Na1 / 1e3);
-        graphNa->SetPointError(0, mu_err_Na1, 0);
-        graphNa->SetMarkerColor(kRed + 2);
-        graphNa->SetMarkerStyle(20);
-        graphNa->SetMarkerSize(1.0);
-        mg->Add(graphNa);
-    } else {
-        std::cerr << "mu_Na1 is NaN or Inf" << std::endl;
-    }
-
-    cFit->cd();
-    mg->Draw("AP");
-
-    TF1* fitFunc = new TF1("fitFunc", "pol1", 0, 5000);
-    mg->Fit(fitFunc); 
-    fitFunc->SetLineColor(kGreen); 
-
-    mg->SetTitle("Funzione di calibrazione");
-    addTimestamp(cFit, timestamp_Na);
-    mg->GetXaxis()->SetTitle("Canali dei picchi");
-    mg->GetYaxis()->SetTitle("Energie [keV]");
-
-    TLegend* legend = new TLegend(0.1, 0.7, 0.3, 0.9);
-    legend->AddEntry(mg->GetListOfGraphs()->At(0), "137Cs");
-    legend->AddEntry(mg->GetListOfGraphs()->At(1), "60Co");
-    legend->AddEntry(mg->GetListOfGraphs()->At(2), "22Na");
-    legend->Draw();*/
-
-
     double min_mu = std::min({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
     double max_mu = std::max({mu_Cs, mu_Co1, mu_Co2, mu_Na1, mu_Na2});
 
@@ -304,15 +240,24 @@ int calibration() {
     mg->SetMarkerStyle(21);
 
     mg->SetPoint(0, mu_Cs, energy_Cs / 1e3);
-    mg->SetPointError(0, mu_err_Cs, 0);
+    mg->SetPointError(0, mu_err_Cs, 0.);
 
     mg->SetPoint(1, mu_Co1, energy_Co1 / 1e3);
-    mg->SetPointError(1, mu_err_Co1, 0);
+    mg->SetPointError(1, mu_err_Co1, 0.);
     mg->SetPoint(2, mu_Co2, energy_Co2 / 1e3);
-    mg->SetPointError(2, mu_err_Co2, 0);
+    mg->SetPointError(2, mu_err_Co2, 0.);
 
     mg->SetPoint(3, mu_Na1, energy_Na1 / 1e3);
-    mg->SetPointError(3, mu_err_Na1, 0);
+    mg->SetPointError(3, mu_err_Na1, 0.);
+    mg->SetPoint(4, mu_Na2, energy_Na2 / 1e3);
+    mg->SetPointError(4, mu_err_Na2, 0.);
+
+
+    std::cout<< mu_Cs<< " "<< mu_err_Cs<< std::endl;
+    std::cout<< mu_Co1<< " "<< mu_err_Co1<< std::endl;
+    std::cout<< mu_Co2<< " "<< mu_err_Co2<< std::endl;
+    std::cout<< mu_Na1<< " "<< mu_err_Na1<< std::endl;
+    std::cout<< mu_Na2<< " "<< mu_err_Na2<< std::endl;
 
     mg->SetMarkerStyle(8);
     mg->SetMarkerSize(1);
@@ -320,8 +265,11 @@ int calibration() {
     mg->SetLineColor(kAzure -9);
     mg->Draw("AP");
 
-    TF1* fit = new TF1("fit", "pol2", 0, 5000); // Adjust range as needed
-    mg->Fit(fit, "R", 0, 5000);
+    TF1* fit = new TF1("fit", "pol1", min_mu, max_mu); // Adjust range as needed
+    
+    fit->SetParameters(0,1/3);
+    mg->Fit(fit, "WQN");
+    mg->Fit(fit); // "final fit"
 
     // Draw fit line
     fit->SetLineColor(kRed);
