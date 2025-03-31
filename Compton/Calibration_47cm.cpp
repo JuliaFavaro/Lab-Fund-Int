@@ -2,6 +2,8 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <numeric>
 #include <TCanvas.h>
 #include <TGraphErrors.h>
 #include <TF1.h>
@@ -36,16 +38,19 @@ void readMuValues(const std::string& filename, std::vector<double>& mu_values, s
 
 // Function to calculate mean values and errors
 void calculateMeanValues(const std::vector<double>& mu1, const std::vector<double>& mu2, const std::vector<double>& err1, const std::vector<double>& err2, std::vector<double>& mean_mu, std::vector<double>& stat_err, std::vector<double>& syst_err) {
-    for (size_t i = 0; i < mu1.size(); ++i) {
+    size_t size = mu1.size();
+    if (mu2.size() < size) {
+        size = mu2.size();
+    }
+
+    for (size_t i = 0; i < size; ++i) {
         double mean = (mu1[i] + mu2[i]) / 2.0;
-        double varianza = 0.0;
-        varianza += (mu1[i] - mean) * (mu1[i] - mean);
-        varianza += (mu2[i] - mean) * (mu2[i] - mean);
-        double sist_error = sqrt(varianza / 2.0);
-        double stat_error = sqrt((err1[i] * err1[i] + err2[i] * err2[i]) / 2.0);
+        double variance = (pow(mu1[i] - mean, 2) + pow(mu2[i] - mean, 2)) / 2.0;
+        double syst_error = sqrt(variance);
+        double stat_error = sqrt((pow(err1[i], 2) + pow(err2[i], 2)) / 2.0);
         mean_mu.push_back(mean);
         stat_err.push_back(stat_error);
-        syst_err.push_back(sist_error);
+        syst_err.push_back(syst_error);
     }
 }
 
@@ -130,7 +135,6 @@ double compton_scattering(double E, double E1, double E1_stat, double E1_sist, d
     // Propagate the statistical error of E1_stat
     double dE1 = pow(E, 2)/pow(E-E1, 2);
     stat_error = dE1*E1_stat;
-    
     return me;
 }
 
@@ -142,20 +146,26 @@ double calculateSystematicError(double me_nominal, double me_minus_sist, double 
 }
 
 int main() {
-    std::string filename = "calibration_51.txt"; // Replace with the actual filename
+    std::string filename = "calibration_47.txt"; // Replace with the actual filename
 
-    std::vector<double> mu1, mu2, err1, err2;
+    std::vector<double> mu1, mu2, err1, err2;    
     readMuValues(filename, mu1, err1, mu2, err2);
 
     std::vector<double> mean_mu, stat_err, syst_err;
     calculateMeanValues(mu1, mu2, err1, err2, mean_mu, stat_err, syst_err);
+    mean_mu.push_back(2559.79);
+    stat_err.push_back(0.44943);
+    syst_err.push_back(0);
+    mean_mu.push_back(228.56);
+    stat_err.push_back(0.0623565);
+    syst_err.push_back(0);
 
-    std::vector<double> energy = {662e3, 1.17e6, 1.33e6, 551e3, 1.274e6}; // Energy values for Cs, Co1, Co2, Na1, Na2
+    std::vector<double> energy = {1.17e6, 1.33e6, 551e3, 1.274e6, 662e3, 60e3}; // Energy values for Cs, Co1, Co2, Na1, Na2, Am
     TF1* fit = performLinearFit(mean_mu, stat_err, syst_err, energy);
 
-    std::vector<double> energies_final = {3464, 3856}; // Channels
-    std::vector<double> energies_stat = {4, 3};
-    std::vector<double> energies_sist = {34, 40};
+    std::vector<double> energies_final = {3675, 4101}; // Channels
+    std::vector<double> energies_stat = {6, 4};
+    std::vector<double> energies_sist = {35, 16};
 
     std::vector<EnergyResult> eval_nominal = evaluateEnergies(fit, energies_final, energies_stat, "nominal");
 
@@ -190,10 +200,7 @@ int main() {
 
         double syst_error_me = calculateSystematicError(me_nominal, me_minus_sist, me_plus_sist);
 
-        std::cout<<"Terzo picco:" <<511.0*1124.0/(511.0+cos(22.0 * M_PI / 180.0 )*1124.0-1124.0)<<std::endl;
         std::cout << "Compton scattering result (me): " << me_nominal << " +/- " << stat_error << " (stat error) +/- " << syst_error_me << " (syst error)" << std::endl;
-
-        
     }
 
     return 0;
