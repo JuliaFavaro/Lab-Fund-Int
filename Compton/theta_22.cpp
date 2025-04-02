@@ -90,6 +90,11 @@ void addIntegral(TCanvas* canvas, double integral) {
     text->SetTextSize(0.04);
     std::string integralText = "Integrale: " +std::to_string(static_cast<int>(integral)) + " counts";
     text->DrawText(0.1, 0.78, integralText.c_str());
+    
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << 1.5;
+    std::string integralText2= "Risoluzione: " + oss.str()+ " deg";
+    text->DrawText(0.1, 0.74, integralText2.c_str());
 }
 
 TF1* fit_exp(TH1D* hCo ){
@@ -634,7 +639,7 @@ int miglior_fit(){
     std::string filename = "Dati/Acquisizione_notte_1203_47cm_histo.dat";
 
     // Timestamp di creazione del file
-    std::string timestamp_Co = "11.03.2025 18:20";
+    std::string timestamp_Co = "12.03.2025 18:20";
     std::string duration_Co = "Durata: 93748315  ms #approx 26.0h";
 
     // Vettori per memorizzare le ampiezze di impulo registrate nei canali

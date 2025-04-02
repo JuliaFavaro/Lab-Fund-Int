@@ -85,6 +85,7 @@ Cobalto CalibrazioneCoInizio(std::ifstream &fileCo) {
  risultatoCoIn.MediaPicco2Co = f4->GetParameter(6); //media picco2
  return risultatoCoIn; 
 }
+
 Cobalto CalibrazioneCoFine(std::ifstream &fileCo) {
     std::string linea;
     Cobalto risultatoCoFin{0.0, 0.0, 0.0, 0.0}; 
@@ -136,6 +137,7 @@ Cobalto CalibrazioneCoFine(std::ifstream &fileCo) {
  risultatoCoFin.MediaPicco2Co = f4->GetParameter(6); //media picco2
  return risultatoCoFin; 
 }
+
 struct Americio{
     double MediaPiccoAm; 
     double Errore_Am;
@@ -277,7 +279,6 @@ Cesio CalibrazioneCsIn (std::ifstream &fileCs){
   return risultatoCsIn; 
 }
 
-
 Cesio CalibrazioneCsFin (std::ifstream &fileCs){
     std::string linea;
     Cesio risultatoCsFin{0.0,0.0};
@@ -324,6 +325,7 @@ struct Sodio{
     double MediaPiccoNa;
     double Err_Na;
 };
+
 Sodio CalibrazioneNaIn(std::ifstream &fileNa){ 
     std::string linea;
     Sodio risultatoNaIn{0.0,0.0};
@@ -371,6 +373,7 @@ Sodio CalibrazioneNaIn(std::ifstream &fileNa){
  std::cout << "Media del Picco Na INIZIO: " << risultatoNaIn.MediaPiccoNa << std::endl;
  return risultatoNaIn; 
 }
+
 Sodio CalibrazioneNaFin(std::ifstream &fileNa){ 
     std::string linea;
     Sodio risultatoNaFin{0.0,0.0};
@@ -419,14 +422,13 @@ Sodio CalibrazioneNaFin(std::ifstream &fileNa){
  return risultatoNaFin; 
 }
 
-
 struct Compton{
     double Picco1Co;
     double Picco2Co; 
     double Err_1;
     double Err_2;
-
 };
+
 Compton SpettroCo(std::ifstream &file) {
     std::string linea;
     Compton risultatoCompton{ 0.0 , 0.0, 0.0, 0.0 };

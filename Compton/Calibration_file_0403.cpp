@@ -208,7 +208,7 @@ int calibration() {
     fFinal->SetParameter(6, 200);
     fFinal->SetParameter(7, 1850);
     fFinal->SetParameter(8, 50);
-    fFinal->SetParameter(9,10);
+    fFinal->SetParameter(9, 10);
     fFinal->SetParameter(10, 4450);
     fFinal->SetParameter(11, 75);
     

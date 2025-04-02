@@ -441,8 +441,8 @@ int miglior_fit(){
     std::vector<double> data_Co;
     readData(filename, data_Co);
 
-    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
-    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 18#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo_nonrebin = histogram_nonrebin(data_Co, "Spettro ^{60}Co. Angolo 28#circ. Distanza 47 cm", kBlue+2);
+    TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 28#circ. Distanza 47 cm", kBlue+2);
 
     // Fit principale 
     TF1* fitFunction = fit_exp(hCo);

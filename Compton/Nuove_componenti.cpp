@@ -53,7 +53,7 @@ TH1D* histogram(std::vector<double>& channels, const char* hist_name, const char
     return h1Rebinned2;
 }
 
-void fitBackgroundAndPeak(TH1D* hCo, TF1*& fit) {
+TF1* FitBackgroundAndGaussians(TH1D* hCo) {
     // Fit a fifth-degree polynomial to the background part
     TF1* f1 = new TF1("f1", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4", 2620, 3150);
     f1->SetParameter(0, 50);
@@ -117,33 +117,6 @@ void fitBackgroundAndPeak(TH1D* hCo, TF1*& fit) {
     gStyle->SetOptFit(1111);
 }
 
-void fitBackgroundAndGaussians(TH1D* hCo_fondo, TF1*& fit) {
-    fit = new TF1("f2", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*x^4 + [5]*x^5 + [6]*TMath::Gaus(x, [7], [8]) + [9]*TMath::Gaus(x, [10], [11])", 3250, 4950);
-    fit->SetParameter(0, 881); //ci metto quelli trovati dal primo fit esponenziale
-    fit->SetParameter(1, -0.05);
-    fit->SetParameter(2, -6.399e-5);
-    fit->SetParameter(3, -1.337e-8);
-    fit->SetParameter(4, 4e-12);
-    fit->SetParameter(5, 1e-16);
-   
-    fit->SetParameter(6, 450);
-    fit->SetParameter(7, 4150);
-    fit->SetParameter(8, 90);
-    fit->SetParameter(9, 380);
-    fit->SetParameter(10, 4700);
-    fit->SetParameter(11, 88);
-
-    fit->SetParName(6, "A_1"); // Gaussian amplitude
-    fit->SetParName(7, "#mu_1"); 
-    fit->SetParName(8, "#sigma_1");  
-    fit->SetParName(9, "A_2"); // Gaussian amplitude
-    fit->SetParName(10, "#mu_2"); 
-    fit->SetParName(11, "#sigma_2");
-
-    hCo_fondo->Fit("f2","L","",3250, 5000); 
-    gStyle->SetOptFit(1111);
-}
-
 void overlayHistograms(TH1D* hCo, TH1D* hCo_fondo) {
     TCanvas* c = new TCanvas("c", "Overlay of Spectra", 800, 600);
     hCo->Draw("HIST");
@@ -159,15 +132,18 @@ int main() {
     std::string filename_fondo= "Dati/Giorno_0503/calibrazioneCo_T240_0503_histo.dat";
     std::vector<double> data_Co_fondo;
     readData(filename_fondo, data_Co_fondo);
-    TH1D* hCo_fondo = histogram(data_Co_fondo, "hCo_fondo", "Spettro ^{60}Co Fondo. Angolo 22#circ. Distanza 47 cm", kBlue + 2);
+    TH1D* hCo_fondo = histogram(data_Co_fondo, "hCo_fondo", "Spettro ^{60}Co Calibrazione", kBlue + 2);
 
     std::string filename = "Dati/Acquisizione_notte_0503_51cm_histo.dat";
     std::vector<double> data_Co;
     readData(filename, data_Co);
     TH1D* hCo = histogram(data_Co, "hCo", "Spettro ^{60}Co. Angolo 22#circ. Distanza 51.5 cm", kRed);
 
+    TF1* fitCo=fitBackgroundAndPeak(hCo);
+
     // Overlay the histograms
     overlayHistograms(hCo, hCo_fondo);
+    /*
 
     // Fit the histograms
     TF1* fitCo;
@@ -182,7 +158,7 @@ int main() {
 
     std::cout << "Mean of hCo: " << meanCo << std::endl;
     std::cout << "Mean of hCo_fondo: " << meanCo_fondo << std::endl;
-    std::cout << "Shift in means: " << meanShift << std::endl;
+    std::cout << "Shift in means: " << meanShift << std::endl;*/
 
     return 0;
 }
