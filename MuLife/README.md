@@ -1,21 +1,29 @@
 # Julia Favaro's Project - Fundamental Interactions Laboratory 2024-2025
 
 ## Muon decay lab experience
-
+Decode data stored in an output file produced by FIFOread.c and print a table in a file.
+The output file contains (from left to right):
+- timestamp: number of clock cycle since FPGA deassertion (perodical clock counter resets are resolved and removed)
+- digital channels: logic value of the 12 digital channel (from ch 0 to ch 11)
+- place holder: fixed to "0 0 0"
+- analog flag: 1 if the analog value is valid in this entry (the reading was not performed at this timestamp)
+- analog id: identifier of the analog reading
+- analag value: digitalized value of the analog signal
+Usage: ./decoder inputFile outputFile
 
 ### Folder organization:
 
 ### Objectives of the experience
-1. Verify the existence of possible temporal correlations between the arrivals of cosmic rays at successive times.
-2. Verify the existence of correlated arrivals of cosmic rays in more than one telescope simultaneously (extended air showers). Characterize their frequency and any other information useful to investigate their physical origin.
-3. Measure the flux of cosmic rays, both localized or extended, over long periods (days) and verify the existence of possible variations, daily or aperiodic, in the flux.
+1. Misurare con la maggiore precisione possibile la vita media dei muoni che si arrestano nel
+bersaglio, realizzando un sistema per misurare il tempo che intercorre tra il loro arrivo e il
+successivo decadimento.
+2. Determinare con la maggiore precisione possibile la massa di tali particelle, sulla base della
+distribuzione di energia rilasciata dai prodotti di decadimento.
 
 #### Installation and usage
 Most of the code was developed using the C++ language and the ROOT library. My partner Arianna and I obtained the datasets during our lab lectures. This is available on a private Google Drive because of GitHub space limitation. Documentation is embedded in the code. 
 
 Some useful information on how to install ROOT:[ROOT on WSL](https://root-forum.cern.ch/t/complete-root-installation-instructions-for-wsl-ubuntu-18-04-on-windows-10/35148/3), [ROOT official installation page](https://root.cern/install/)
-
-The only Python file was originally developed as Jupyter Notebook on Anaconda.
 
 Disclaimer: I'm bilingual and in many cases you will find comments in both languages, as this was written on the spot. This way of thinking helped me develop my project faster.
 
