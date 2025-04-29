@@ -1,7 +1,8 @@
 # Julia Favaro's Project - Fundamental Interactions Laboratory 2024-2025
 
 ## Muon decay lab experience
-Decode data stored in an output file produced by FIFOread.c and print a table in a file.
+- File _decoder.cpp_ and _decoder_: 
+Decode data stored in an output file produced by FIFOread.c (FPGA De10Nano) and print a table in a file.
 The output file contains (from left to right):
 - timestamp: number of clock cycle since FPGA deassertion (perodical clock counter resets are resolved and removed)
 - digital channels: logic value of the 12 digital channel (from ch 0 to ch 11)
@@ -10,15 +11,16 @@ The output file contains (from left to right):
 - analog id: identifier of the analog reading
 - analag value: digitalized value of the analog signal
 Usage: ./decoder inputFile outputFile
+- File _Calcoli.veloci.ipynb_ : 
+Jupyter notebook (Python) that calculates the efficiency of each PMT of our experiment, prints the graphs of efficiency over single counts for each PMT and calculates the solid angle described by our system.
+- File _ToyMonteCarlo.ipynb_ :
+Jupyter notebook (Python) that cointains the MC simulation of predicted START and STOP rate signals from our experiments. It also calculates the intrinsic efficiency of our PMT 1 (veto of START). 
 
 ### Folder organization:
 
 ### Objectives of the experience
-1. Misurare con la maggiore precisione possibile la vita media dei muoni che si arrestano nel
-bersaglio, realizzando un sistema per misurare il tempo che intercorre tra il loro arrivo e il
-successivo decadimento.
-2. Determinare con la maggiore precisione possibile la massa di tali particelle, sulla base della
-distribuzione di energia rilasciata dai prodotti di decadimento.
+1. Measure as precisely as possible the lifetime of muons that stop in the target, by creating a system to measure the time between their arrival and their subsequent decay. 
+2. Determine as precisely as possible the mass of these particles, based on the distribution of energy released by the decay products.
 
 #### Installation and usage
 Most of the code was developed using the C++ language and the ROOT library. My partner Arianna and I obtained the datasets during our lab lectures. This is available on a private Google Drive because of GitHub space limitation. Documentation is embedded in the code. 

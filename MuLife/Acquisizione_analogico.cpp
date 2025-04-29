@@ -62,8 +62,7 @@ void readFileAndPopulateArrays(const std::string& filename, std::vector<double>&
 int calculateTimeDifferencesAndFillHistogram(
     const std::vector<double>& startTimes,
     const std::vector<double>& stopTimes,
-    TH1F* histogram,
-    int& totalStopsUsed) { // Aggiunto parametro per contare il numero totale di stop
+    TH1F* histogram) {
 
     if (startTimes.size() < 2) {
         throw std::runtime_error("Il vettore startTimes deve contenere almeno due valori!");
@@ -75,13 +74,12 @@ int calculateTimeDifferencesAndFillHistogram(
 
     size_t stopIndex = 0;
     int matchedStartCount = 0;
-    totalStopsUsed = 0; // Inizializza il contatore totale degli stop usati
 
     // Itera sugli START consecutivi
     for (size_t i = 0; i < startTimes.size() - 1; ++i) {
         double currentStart = startTimes[i];
         double nextStart = startTimes[i + 1];
-        
+
         // Avanza il puntatore degli STOP al primo con timestamp maggiore del currentStart
         while (stopIndex < stopTimes.size() && stopTimes[stopIndex] < currentStart) {
             ++stopIndex;
@@ -93,7 +91,6 @@ int calculateTimeDifferencesAndFillHistogram(
             double timeDifference = stopTimes[stopIndex] - currentStart;
             histogram->Fill(timeDifference);
             hasMatch = true; // Indica che questo start ha almeno una corrispondenza
-            ++totalStopsUsed; // Incrementa il conteggio totale degli stop usati
             ++stopIndex;
         }
 
@@ -108,12 +105,13 @@ int calculateTimeDifferencesAndFillHistogram(
 void addTimestamp(TCanvas* canvas, const std::string& timestamp, const std::string& duration) {
     TLatex* latex = new TLatex();
     latex->SetNDC();
-    latex->SetTextSize(0.04);
+    latex->SetTextSize(0.05);
     latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
     latex->DrawLatex(0.1, 0.79, duration.c_str()); // Posizionamento sotto il timestamp
 }
+
 int main() {
-    const std::string filename = "Dati/output_20250423-mulife.txt";
+    const std::string filename = "Dati/output_20250417-mulife.txt";
     std::vector<double> startTimes;
     std::vector<double> stop1Times;
     std::vector<double> stop2Times;
@@ -125,28 +123,24 @@ int main() {
         return 1;
     }
 
-    std::string timestamp = "23.04.2025 12:30";
-    std::string duration = "Durata: 26 ore";
+    std::string timestamp = "17.04.2025 18:30";
+    std::string duration = "Durata: 120 ore";
 
     TCanvas* c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
     c1->SetGrid();
 
     // Crea gli istogrammi
-    TH1F* histogram1 = new TH1F("time_differences_stop1", "Differenze di tempo tra start e stop", 500, 0, 1000);
-    TH1F* histogram2 = new TH1F("time_differences_stop2", "Differenze di tempo", 500, 0, 1000);
-
-    // Variabili per il conteggio totale di stop usati
-    int totalStopsUsed1 = 0;
-    int totalStopsUsed2 = 0;
+    TH1F* histogram1 = new TH1F("time_differences_stop1", "Time Differences (Start-Stop1)", 1000, 0, 500); // Bin per 0-500 ns
+    TH1F* histogram2 = new TH1F("time_differences_stop2", "Time Differences (Start-Stop2)", 1000, 0, 500); // Bin per 0-500 ns
 
     // Calcola le differenze temporali per stop1 e stop2
-    int matchedStartCount1 = calculateTimeDifferencesAndFillHistogram(startTimes, stop1Times, histogram1, totalStopsUsed1);
-    int matchedStartCount2 = calculateTimeDifferencesAndFillHistogram(startTimes, stop2Times, histogram2, totalStopsUsed2);
+    int matchedStartCount1 = calculateTimeDifferencesAndFillHistogram(startTimes, stop1Times, histogram1);
+    int matchedStartCount2 = calculateTimeDifferencesAndFillHistogram(startTimes, stop2Times, histogram2);
 
     // Disegna gli istogrammi sovrapposti
     histogram1->SetLineColor(kRed);
     histogram1->SetLineWidth(2);
-    histogram1->SetXTitle("$\\Delta$ t (ns)");
+    histogram1->SetXTitle("Differenza di tempo (ns)");
     histogram1->SetYTitle("Conteggi");
     histogram1->Draw();
 
@@ -163,11 +157,8 @@ int main() {
     // Aggiungi timestamp e durata
     addTimestamp(c1, timestamp, duration);
 
-    // Stampa i risultati
     std::cout << "Numero di start con almeno uno stop1 corrispondente: " << matchedStartCount1 << std::endl;
-    std::cout << "Numero di stop1 totali utilizzati: " << totalStopsUsed1 << std::endl;
     std::cout << "Numero di start con almeno uno stop2 corrispondente: " << matchedStartCount2 << std::endl;
-    std::cout << "Numero di stop2 totali utilizzati: " << totalStopsUsed2 << std::endl;
 
     return 0;
 }
