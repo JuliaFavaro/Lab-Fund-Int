@@ -11,8 +11,8 @@
 #include <TLatex.h>
 #include <TLegend.h>
 
-// Funzione per leggere il file e popolare gli array startTimes, stop1Times, stop2Times e analogMeasurements
-void readFileAndSeparateMeasurements(const std::string &filename, std::vector<double> &startTimes, std::vector<double> &stop1Times, std::vector<double> &stop2Times, std::vector<double> &analogMeasurements) {
+// Funzione per leggere il file e popolare gli array startTimes, stopTimes, e analogMeasurements
+void readFileAndSeparateMeasurements(const std::string &filename, std::vector<double> &startTimes, std::vector<double> &stop1Times, std::vector<double> &analogMeasurements) {
     std::ifstream file(filename);
 
     if (!file.is_open()) {
@@ -44,13 +44,11 @@ void readFileAndSeparateMeasurements(const std::string &filename, std::vector<do
         if (analogFlag != 0) {
             analogMeasurements.push_back(analogValue);
         } else {
-            // Se la misura è digitale, determina il tipo
-            if (digitalChannels[0] == 1 && digitalChannels[1] == 0 && digitalChannels[2] == 0) {
+            // Se la misura è digitale, considera solo canali 0 e 1
+            if (digitalChannels[0] == 1 && digitalChannels[1] == 0) {
                 startTimes.push_back(timestamp * 5); // Converti in nanosecondi
-            } else if (digitalChannels[0] == 0 && digitalChannels[1] == 1 && digitalChannels[2] == 0) {
+            } else if (digitalChannels[0] == 0 && digitalChannels[1] == 1) {
                 stop1Times.push_back(timestamp * 5); // Converti in nanosecondi
-            } else if (digitalChannels[0] == 0 && digitalChannels[1] == 0 && digitalChannels[2] == 1) {
-                stop2Times.push_back(timestamp * 5); // Converti in nanosecondi
             }
         }
     }
@@ -99,74 +97,108 @@ void addTimestamp(TCanvas *canvas, const std::string &timestamp, const std::stri
     TLatex *latex = new TLatex();
     latex->SetNDC();
     latex->SetTextSize(0.03);
-    latex->DrawLatex(0.1, 0.86, timestamp.c_str());
-    latex->DrawLatex(0.1, 0.81, duration.c_str());
+    latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
+    latex->DrawLatex(0.1, 0.81, duration.c_str()); // Posizionamento sotto il timestamp
+    latex->DrawLatex(0.1, 0.76, "Bin: 100"); // Posizionamento sotto il timestamp
+}
+
+// Funzione di fit: esponenziale + costante
+Double_t exponentialPlusConstant(Double_t* x, Double_t* par) {
+    Double_t t = x[0];
+    Double_t amplitude = par[0];
+    Double_t decayConstant = par[1];
+    Double_t offset = par[2];
+    return amplitude * exp(-t / decayConstant)+offset ;
+}
+
+void fitHistogram(TH1F* histogram) {
+    /*
+    // Definizione della funzione di fit
+    TF1* f1 = new TF1("f1", "[0]+[1]*x", 300, 8000);
+    histogram->Fit("f1","RL+N","",300,5000); 
+    f1->SetParameters(2, -1); // Valori iniziali: ampiezza, costante di decadimento, offset
+    double p0 = f1->GetParameter(0);
+    double p1 = f1->GetParameter(1);*/
+    TF1* fitFunction = new TF1("fitFunction", "[0]+[1]*exp(-x/[2])", 300, 8000);
+    // Inizializzazione dei parametri
+    fitFunction->SetParameters(2, 40, 2.2e-6); // Valori iniziali: ampiezza, costante di decadimento, offset
+
+    histogram->Fit(fitFunction, "RLM+N","", 300, 5000); 
+
+    fitFunction->SetParName(0, "A_1"); 
+    fitFunction->SetParName(1, "#tau_1"); 
+    fitFunction->SetParName(2, "c");
+
+    // Disegna la funzione di fit sull'istogramma
+    fitFunction->SetLineColor(kRed);
+    fitFunction->SetLineWidth(2);
+    fitFunction->Draw("same");
+    
+    gStyle->SetOptFit(1111);
 }
 
 int main() {
-    const std::string filename = "Dati/output_20250429-mulife.txt";
+    const std::string filename = "Dati/output_20250430-mulife.txt";
     std::vector<double> startTimes;
     std::vector<double> stop1Times;
     std::vector<double> stop2Times;
     std::vector<double> analogMeasurements;
 
     try {
-        readFileAndSeparateMeasurements(filename, startTimes, stop1Times, stop2Times, analogMeasurements);
+        readFileAndSeparateMeasurements(filename, startTimes, stop1Times, analogMeasurements);
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
 
-    std::string timestamp = "29.04.2025 18:30";
-    std::string duration = "Durata: 14.5 ore";
-    /*
+    std::string timestamp = "30.04.2025 12:30";
+    std::string duration = "Durata: 146.5 ore";
+
     TCanvas *c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
     c1->SetGrid();
 
-
-    TH1F *histogram1 = new TH1F("time_differences_stop1", "Time Differences (Start-Stop1)", 1000, 0, 500);
-    TH1F *histogram2 = new TH1F("time_differences_stop2", "Time Differences (Start-Stop2)", 1000, 0, 500);
-
+    TH1F *histogram1 = new TH1F("time_differences_stop", "#Delta t tra Start e Stop", 100, 300, 7000);
     int matchedStartCount1 = calculateTimeDifferencesAndFillHistogram(startTimes, stop1Times, histogram1);
-    int matchedStartCount2 = calculateTimeDifferencesAndFillHistogram(startTimes, stop2Times, histogram2);
 
-    histogram1->SetLineColor(kRed);
+    double binWidth = histogram1->GetBinWidth(1); 
+    std::cout << "La larghezza di un bin è: " << binWidth << " ns" << std::endl; //non deve essere più piccola della risoluzione di 5 ns per ovvi motivi
+
+    histogram1->SetLineColor(kBlue);
     histogram1->SetLineWidth(2);
-    histogram1->SetXTitle("Differenza di tempo (ns)");
+    histogram1->SetXTitle("#Delta t (ns)"); // Corretto il titolo
     histogram1->SetYTitle("Conteggi");
     histogram1->Draw();
 
-    histogram2->SetLineColor(kBlue);
-    histogram2->SetLineWidth(2);
-    histogram2->Draw("SAME");
+    addTimestamp(c1, timestamp, duration);
+    std::cout << "Numero di start con almeno uno stop corrispondente: " << matchedStartCount1 << std::endl;
+    fitHistogram(histogram1); // Esegui il fit sull'istogramma
 
-    TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-    legend->AddEntry(histogram1, "Start - Stop1", "l");
-    legend->AddEntry(histogram2, "Start - Stop2", "l");
-    legend->Draw();
-
-    addTimestamp(c1, timestamp, duration);*/
-
+    /******************************************************************************************************* */
     // Canvas per le misure analogiche
     TCanvas *c2 = new TCanvas("c2", "Distribuzione delle misure analogiche", 1500, 1500);
     c2->SetGrid();
 
-    TH1F *analogHistogram = new TH1F("analog_measurements", "Distribuzione dei valori analogici", 100, 2, *std::max_element(analogMeasurements.begin(), analogMeasurements.end()));
-    for (double value : analogMeasurements) {
-        analogHistogram->Fill(value);
+    if (!analogMeasurements.empty()) {
+        double maxAnalogValue = *std::max_element(analogMeasurements.begin(), analogMeasurements.end());
+        TH1F *analogHistogram = new TH1F("analog_measurements", "Distribuzione dei valori analogici", 100, 2, maxAnalogValue);
+
+        for (double value : analogMeasurements) {
+            analogHistogram->Fill(value);
+        }
+
+        analogHistogram->SetLineColor(kGreen + 2);
+        analogHistogram->SetLineWidth(2);
+        analogHistogram->SetXTitle("Valore analogico");
+        analogHistogram->SetYTitle("Conteggi");
+        analogHistogram->Draw();
+
+        addTimestamp(c2, timestamp, duration);
+    } else {
+        std::cerr << "Nessuna misura analogica trovata. L'istogramma non sarà creato." << std::endl;
     }
 
-    analogHistogram->SetLineColor(kGreen + 2);
-    analogHistogram->SetLineWidth(2);
-    analogHistogram->SetXTitle("Valore analogico");
-    analogHistogram->SetYTitle("Conteggi");
-    analogHistogram->Draw();
-
-    addTimestamp(c2, timestamp, duration);
-
-    //std::cout << "Numero di start con almeno uno stop1 corrispondente: " << matchedStartCount1 << std::endl;
-    //std::cout << "Numero di start con almeno uno stop2 corrispondente: " << matchedStartCount2 << std::endl;
     std::cout << "Numero di misure analogiche: " << analogMeasurements.size() << std::endl;
+
 
     return 0;
 }
