@@ -10,6 +10,7 @@
 #include <TStyle.h>
 #include <TLatex.h>
 #include <TLegend.h>
+#include <TArrow.h> // Per aggiungere la freccia
 
 // Funzione per leggere il file e popolare gli array startTimes, stop1Times e stop2Times
 void readFileAndPopulateArrays(const std::string& filename, std::vector<double>& startTimes, std::vector<double>& stop1Times, std::vector<double>& stop2Times) {
@@ -108,12 +109,14 @@ int calculateTimeDifferencesAndFillHistogram(
 void addTimestamp(TCanvas* canvas, const std::string& timestamp, const std::string& duration) {
     TLatex* latex = new TLatex();
     latex->SetNDC();
-    latex->SetTextSize(0.04);
+    latex->SetTextSize(0.03);
     latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
-    latex->DrawLatex(0.1, 0.79, duration.c_str()); // Posizionamento sotto il timestamp
+    latex->DrawLatex(0.1, 0.81, duration.c_str()); // Posizionamento sotto il timestamp
+    latex->DrawLatex(0.1, 0.76, "Bin: 100"); // Posizionamento sotto il timestamp
 }
+
 int main() {
-    const std::string filename = "Dati/output_20250423-mulife.txt";
+    const std::string filename = "Dati/output_20250424-mulife.txt";
     std::vector<double> startTimes;
     std::vector<double> stop1Times;
     std::vector<double> stop2Times;
@@ -125,15 +128,18 @@ int main() {
         return 1;
     }
 
-    std::string timestamp = "23.04.2025 12:30";
-    std::string duration = "Durata: 26 ore";
+    std::string timestamp = "24.04.2025 18:30";
+    std::string duration = "Durata: 120 ore";
 
     TCanvas* c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
     c1->SetGrid();
 
     // Crea gli istogrammi
-    TH1F* histogram1 = new TH1F("time_differences_stop1", "Differenze di tempo tra start e stop", 500, 0, 1000);
-    TH1F* histogram2 = new TH1F("time_differences_stop2", "Differenze di tempo", 500, 0, 1000);
+    TH1F* histogram1 = new TH1F("time_differences_stop1", "#Delta t usando Stop 1 o Stop 2", 100, 0, 4000);
+    TH1F* histogram2 = new TH1F("time_differences_stop2", "Time Differences (Start-Stop2)", 100, 0, 4000); 
+
+    double binWidth = histogram2->GetBinWidth(1); 
+    std::cout << "La larghezza di un bin è: " << binWidth << " ns" << std::endl; //non deve essere più piccola della risoluzione di 5 ns per ovvi motivi
 
     // Variabili per il conteggio totale di stop usati
     int totalStopsUsed1 = 0;
@@ -144,13 +150,14 @@ int main() {
     int matchedStartCount2 = calculateTimeDifferencesAndFillHistogram(startTimes, stop2Times, histogram2, totalStopsUsed2);
 
     // Disegna gli istogrammi sovrapposti
-    histogram1->SetLineColor(kRed);
+    histogram1->SetLineColor(kBlue);
     histogram1->SetLineWidth(2);
-    histogram1->SetXTitle("$\\Delta$ t (ns)");
+    histogram1->SetXTitle("#Delta t (ns)"); // Corretto il titolo
     histogram1->SetYTitle("Conteggi");
+    histogram1->SetMaximum(30);
     histogram1->Draw();
 
-    histogram2->SetLineColor(kBlue);
+    histogram2->SetLineColor(kRed);
     histogram2->SetLineWidth(2);
     histogram2->Draw("SAME");
 
@@ -162,6 +169,26 @@ int main() {
 
     // Aggiungi timestamp e durata
     addTimestamp(c1, timestamp, duration);
+
+    // Aggiungi una freccia per il picco a 200 ns e un'etichetta "afterpulses"
+    double peakX = 200; // Posizione del picco sull'asse X (200 ns)
+    double peakY = histogram2->GetBinContent(histogram2->FindBin(peakX)); // Conteggio associato al picco
+    double arrowXStart = peakX - 20; // Punto iniziale della freccia sull'asse X
+    double arrowYStart = peakY * 0.8; // Punto iniziale della freccia sull'asse Y
+    double arrowXEnd = peakX; // Punto finale della freccia sull'asse X
+    double arrowYEnd = peakY + 1; // Punto finale della freccia sull'asse Y
+    
+    TArrow* arrow = new TArrow(arrowXEnd, arrowYEnd, peakX, peakY, 0.02, "|>"); // Aggiungi la freccia
+    arrow->SetLineColor(kBlack);
+    arrow->SetLineWidth(2);
+    arrow->Draw();
+
+    // Aggiungi il testo "afterpulses"
+    TLatex* latex = new TLatex();
+    latex->SetTextSize(0.03);
+    latex->SetTextColor(kBlack);
+    latex->DrawLatex(arrowXEnd - 50, arrowYEnd, "afterpulses"); // Posiziona il testo vicino alla freccia
+    c1->Update();
 
     // Stampa i risultati
     std::cout << "Numero di start con almeno uno stop1 corrispondente: " << matchedStartCount1 << std::endl;

@@ -59,13 +59,13 @@ void readFileAndPopulateArrays(const std::string& filename, std::vector<double>&
 }
 
 // Funzione per calcolare le differenze temporali e riempire l'istogramma
-int calculateTimeDifferencesAndFillHistogram(
+void calculateTimeDifferencesAndFillHistogram(
     const std::vector<double>& startTimes,
     const std::vector<double>& stopTimes,
     TH1F* histogram) {
 
-    if (startTimes.size() < 2) {
-        throw std::runtime_error("Il vettore startTimes deve contenere almeno due valori!");
+    if (startTimes.empty()) {
+        throw std::runtime_error("Il vettore startTimes è vuoto!");
     }
 
     if (stopTimes.empty()) {
@@ -73,92 +73,97 @@ int calculateTimeDifferencesAndFillHistogram(
     }
 
     size_t stopIndex = 0;
-    int matchedStartCount = 0;
 
     // Itera sugli START consecutivi
     for (size_t i = 0; i < startTimes.size() - 1; ++i) {
         double currentStart = startTimes[i];
         double nextStart = startTimes[i + 1];
-
+        
         // Avanza il puntatore degli STOP al primo con timestamp maggiore del currentStart
         while (stopIndex < stopTimes.size() && stopTimes[stopIndex] < currentStart) {
             ++stopIndex;
         }
 
         // Calcola le differenze di tempo per tutti gli STOP compresi tra currentStart e nextStart
-        bool hasMatch = false;
         while (stopIndex < stopTimes.size() && stopTimes[stopIndex] < nextStart) {
             double timeDifference = stopTimes[stopIndex] - currentStart;
+            if (timeDifference>300e-9) {    
             histogram->Fill(timeDifference);
-            hasMatch = true; // Indica che questo start ha almeno una corrispondenza
             ++stopIndex;
-        }
-
-        if (hasMatch) {
-            ++matchedStartCount;
+            }
         }
     }
-
-    return matchedStartCount;
-}
-
-void addTimestamp(TCanvas* canvas, const std::string& timestamp, const std::string& duration) {
-    TLatex* latex = new TLatex();
-    latex->SetNDC();
-    latex->SetTextSize(0.05);
-    latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
-    latex->DrawLatex(0.1, 0.79, duration.c_str()); // Posizionamento sotto il timestamp
 }
 
 int main() {
-    const std::string filename = "Dati/output_20250417-mulife.txt";
-    std::vector<double> startTimes;
-    std::vector<double> stop1Times;
-    std::vector<double> stop2Times;
+    // File di input
+    const std::string file0424 = "Dati/output_20250424-mulife.txt";
+    const std::string file0430 = "Dati/output_20250430-mulife.txt";
+
+    // Vettori per i dati di ciascun file
+    std::vector<double> startTimes0424, stop1Times0424, stop2Times0424;
+    std::vector<double> startTimes0430, stop1Times0430, stop2Times0430;
 
     try {
-        readFileAndPopulateArrays(filename, startTimes, stop1Times, stop2Times);
+        readFileAndPopulateArrays(file0424, startTimes0424, stop1Times0424, stop2Times0424);
+        readFileAndPopulateArrays(file0430, startTimes0430, stop1Times0430, stop2Times0430);
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
 
-    std::string timestamp = "17.04.2025 18:30";
-    std::string duration = "Durata: 120 ore";
+    // Istogrammi per i file separati
+    TH1F* histogram0424 = new TH1F("histogram0424", "#Delta t (Start-Stop)", 100, 0, 5000);
+    TH1F* histogram0430 = new TH1F("histogram0430", "#Delta t (Start-Stop)", 100, 0, 5000);
 
-    TCanvas* c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
-    c1->SetGrid();
+    // Istogramma combinato
+    TH1F* combinedHistogram = new TH1F("combinedHistogram", "#Delta t combinato (24/04 e 30/04)", 500, 0, 8000);
 
-    // Crea gli istogrammi
-    TH1F* histogram1 = new TH1F("time_differences_stop1", "Time Differences (Start-Stop1)", 1000, 0, 500); // Bin per 0-500 ns
-    TH1F* histogram2 = new TH1F("time_differences_stop2", "Time Differences (Start-Stop2)", 1000, 0, 500); // Bin per 0-500 ns
+    // Riempi gli istogrammi
+    calculateTimeDifferencesAndFillHistogram(startTimes0424, stop2Times0424, histogram0424);
+    calculateTimeDifferencesAndFillHistogram(startTimes0430, stop1Times0430, histogram0430);
+    calculateTimeDifferencesAndFillHistogram(startTimes0424, stop2Times0424, combinedHistogram);
+    calculateTimeDifferencesAndFillHistogram(startTimes0430, stop1Times0430, combinedHistogram);
 
-    // Calcola le differenze temporali per stop1 e stop2
-    int matchedStartCount1 = calculateTimeDifferencesAndFillHistogram(startTimes, stop1Times, histogram1);
-    int matchedStartCount2 = calculateTimeDifferencesAndFillHistogram(startTimes, stop2Times, histogram2);
+    // Canvas per istogrammi separati
+    TCanvas* canvasSeparate = new TCanvas("canvasSeparate", "Istogrammi separati Delta t", 1500, 1500);
+    canvasSeparate->SetGrid();
+    
+    double binWidth = combinedHistogram->GetBinWidth(1); 
+    std::cout << "La larghezza di un bin è: " << binWidth << " ns" << std::endl; //non deve essere più piccola della risoluzione di 5 ns per ovvi motivi
+
 
     // Disegna gli istogrammi sovrapposti
-    histogram1->SetLineColor(kRed);
-    histogram1->SetLineWidth(2);
-    histogram1->SetXTitle("Differenza di tempo (ns)");
-    histogram1->SetYTitle("Conteggi");
-    histogram1->Draw();
+    histogram0424->SetLineColor(kRed);
+    histogram0424->SetLineWidth(2);
+    histogram0424->SetXTitle("#Delta t (ns)");
+    histogram0424->SetYTitle("Conteggi");
+    histogram0424->Draw();
 
-    histogram2->SetLineColor(kBlue);
-    histogram2->SetLineWidth(2);
-    histogram2->Draw("SAME");
+    histogram0430->SetLineColor(kBlue);
+    histogram0430->SetLineWidth(2);
+    histogram0430->Draw("SAME");
 
-    // Aggiungi legenda
-    TLegend* legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-    legend->AddEntry(histogram1, "Start - Stop1", "l");
-    legend->AddEntry(histogram2, "Start - Stop2", "l");
-    legend->Draw();
+    // Legenda per il canvas separato
+    TLegend* legendSeparate = new TLegend(0.7, 0.7, 0.9, 0.9);
+    legendSeparate->AddEntry(histogram0424, "Start - Stop (24/04)", "l");
+    legendSeparate->AddEntry(histogram0430, "Start - Stop (30/04)", "l");
+    legendSeparate->Draw();
 
-    // Aggiungi timestamp e durata
-    addTimestamp(c1, timestamp, duration);
+    canvasSeparate->Update();
 
-    std::cout << "Numero di start con almeno uno stop1 corrispondente: " << matchedStartCount1 << std::endl;
-    std::cout << "Numero di start con almeno uno stop2 corrispondente: " << matchedStartCount2 << std::endl;
+    // Canvas per istogramma combinato
+    TCanvas* canvasCombined = new TCanvas("canvasCombined", "Istogramma combinato Delta t", 1500, 1500);
+    canvasCombined->SetGrid();
+
+    // Disegna l'istogramma combinato
+    combinedHistogram->SetLineColor(kGreen + 2);
+    combinedHistogram->SetLineWidth(2);
+    combinedHistogram->SetXTitle("#Delta t (ns)");
+    combinedHistogram->SetYTitle("Conteggi");
+    combinedHistogram->Draw();
+
+    canvasCombined->Update();
 
     return 0;
 }
