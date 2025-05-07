@@ -14,7 +14,8 @@ Usage: ./decoder inputFile outputFile
 - File _Calcoli.veloci.ipynb_ : 
 Jupyter notebook (Python) that calculates the efficiency of each PMT of our experiment, prints the graphs of efficiency over single counts for each PMT and calculates the solid angle described by our system.
 - File _ToyMonteCarlo.ipynb_ :
-Jupyter notebook (Python) that cointains the MC simulation of predicted START and STOP rate signals from our experiments. It also calculates the intrinsic efficiency of our PMT 1 (veto of START). 
+Jupyter notebook (Python) that cointains the MC simulation of predicted START and STOP rate signals from our experiments. It also calculates the intrinsic efficiency of our PMT.
+- File  
 
 ### Folder organization:
 

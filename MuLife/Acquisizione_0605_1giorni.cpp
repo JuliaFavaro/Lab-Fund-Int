@@ -99,7 +99,7 @@ void addTimestamp(TCanvas *canvas, const std::string &timestamp, const std::stri
     latex->SetTextSize(0.03);
     latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
     latex->DrawLatex(0.1, 0.81, duration.c_str()); // Posizionamento sotto il timestamp
-    latex->DrawLatex(0.1, 0.76, "Bin: 100"); // Posizionamento sotto il timestamp
+    latex->DrawLatex(0.1, 0.76, "Bin: 50"); // Posizionamento sotto il timestamp
 }
 
 // Funzione di fit: esponenziale + costante
@@ -138,7 +138,7 @@ void fitHistogram(TH1F* histogram) {
 }
 
 int main() {
-    const std::string filename = "Dati/output_20250430-mulife.txt";
+    const std::string filename = "Dati/output_20250506-mulife.txt";
     std::vector<double> startTimes;
     std::vector<double> stop1Times;
     std::vector<double> stop2Times;
@@ -151,13 +151,13 @@ int main() {
         return 1;
     }
 
-    std::string timestamp = "30.04.2025 12:30";
-    std::string duration = "Durata: 146.5 ore";
+    std::string timestamp = "06.05.2025 18:30";
+    std::string duration = "Durata: 14.5 ore";
 
     TCanvas *c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
     c1->SetGrid();
 
-    TH1F *histogram1 = new TH1F("time_differences_stop", "#Delta t tra Start e Stop", 100, 300, 7000);
+    TH1F *histogram1 = new TH1F("time_differences_stop", "#Delta t tra Start e Stop", 50, 300, 7000);
     int matchedStartCount1 = calculateTimeDifferencesAndFillHistogram(startTimes, stop1Times, histogram1);
 
     double binWidth = histogram1->GetBinWidth(1); 
@@ -171,7 +171,7 @@ int main() {
 
     addTimestamp(c1, timestamp, duration);
     std::cout << "Numero di start con almeno uno stop corrispondente: " << matchedStartCount1 << std::endl;
-    //fitHistogram(histogram1); // Esegui il fit sull'istogramma
+    fitHistogram(histogram1); // Esegui il fit sull'istogramma
 
     /******************************************************************************************************* */
     // Canvas per le misure analogiche
