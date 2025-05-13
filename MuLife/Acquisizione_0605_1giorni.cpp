@@ -173,32 +173,5 @@ int main() {
     std::cout << "Numero di start con almeno uno stop corrispondente: " << matchedStartCount1 << std::endl;
     fitHistogram(histogram1); // Esegui il fit sull'istogramma
 
-    /******************************************************************************************************* */
-    // Canvas per le misure analogiche
-    TCanvas *c2 = new TCanvas("c2", "Distribuzione delle misure analogiche", 1500, 1500);
-    c2->SetGrid();
-
-    if (!analogMeasurements.empty()) {
-        double maxAnalogValue = *std::max_element(analogMeasurements.begin(), analogMeasurements.end());
-        TH1F *analogHistogram = new TH1F("analog_measurements", "Distribuzione dei valori analogici", 100, 2, maxAnalogValue);
-
-        for (double value : analogMeasurements) {
-            analogHistogram->Fill(value);
-        }
-
-        analogHistogram->SetLineColor(kGreen + 2);
-        analogHistogram->SetLineWidth(2);
-        analogHistogram->SetXTitle("Valore analogico");
-        analogHistogram->SetYTitle("Conteggi");
-        analogHistogram->Draw();
-
-        addTimestamp(c2, timestamp, duration);
-    } else {
-        std::cerr << "Nessuna misura analogica trovata. L'istogramma non sarà creato." << std::endl;
-    }
-
-    std::cout << "Numero di misure analogiche: " << analogMeasurements.size() << std::endl;
-
-
     return 0;
 }
