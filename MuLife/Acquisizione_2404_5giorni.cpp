@@ -106,13 +106,26 @@ int calculateTimeDifferencesAndFillHistogram(
     return matchedStartCount;
 }
 
+void addHistogramStats(TLatex* latex, TH1F* histo, double x, double y, const char* titolo) {
+    int entries = histo->GetEntries();
+    double mean = histo->GetMean();
+    double rms = histo->GetRMS();
+    double var = rms * rms;
+
+    std::ostringstream oss;
+    oss.precision(2);
+    oss << std::fixed;
+    oss << titolo << ": Entries = " << entries << ", Mean = " << mean << " ns, Var = " << var << " ns^{2}";
+    latex->DrawLatex(x, y, oss.str().c_str());
+}
+
 void addTimestamp(TCanvas* canvas, const std::string& timestamp, const std::string& duration) {
     TLatex* latex = new TLatex();
     latex->SetNDC();
     latex->SetTextSize(0.03);
-    latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // Posizionamento in alto a sinistra del grafico
-    latex->DrawLatex(0.1, 0.81, duration.c_str()); // Posizionamento sotto il timestamp
-    latex->DrawLatex(0.1, 0.76, "Bin: 100"); // Posizionamento sotto il timestamp
+    latex->DrawLatex(0.1, 0.86, timestamp.c_str()); // in alto a sinistra
+    latex->DrawLatex(0.1, 0.81, duration.c_str());
+    latex->DrawLatex(0.1, 0.76, "Bin: 100");
 }
 
 int main() {
@@ -133,9 +146,10 @@ int main() {
 
     TCanvas* c1 = new TCanvas("c1", "Differenze di tempo tra start e stop", 1500, 1500);
     c1->SetGrid();
+    gStyle->SetOptStat(0);
 
     // Crea gli istogrammi
-    TH1F* histogram1 = new TH1F("time_differences_stop1", "#Delta t usando Stop 1 o Stop 2", 100, 0, 4000);
+    TH1F* histogram1 = new TH1F("time_differences_stop1", "#Delta t usando Stop A o Stop B", 100, 0, 4000);
     TH1F* histogram2 = new TH1F("time_differences_stop2", "Time Differences (Start-Stop2)", 100, 0, 4000); 
 
     double binWidth = histogram2->GetBinWidth(1); 
@@ -163,32 +177,27 @@ int main() {
 
     // Aggiungi legenda
     TLegend* legend = new TLegend(0.7, 0.7, 0.9, 0.9);
-    legend->AddEntry(histogram1, "Start - Stop1", "l");
-    legend->AddEntry(histogram2, "Start - Stop2", "l");
+    legend->AddEntry(histogram1, "StopA-Start", "l");
+    legend->AddEntry(histogram2, "StopB-Start", "l");
+
     legend->Draw();
 
     // Aggiungi timestamp e durata
     addTimestamp(c1, timestamp, duration);
 
-    // Aggiungi una freccia per il picco a 200 ns e un'etichetta "afterpulses"
-    double peakX = 200; // Posizione del picco sull'asse X (200 ns)
-    double peakY = histogram2->GetBinContent(histogram2->FindBin(peakX)); // Conteggio associato al picco
-    double arrowXStart = peakX - 20; // Punto iniziale della freccia sull'asse X
-    double arrowYStart = peakY * 0.8; // Punto iniziale della freccia sull'asse Y
-    double arrowXEnd = peakX; // Punto finale della freccia sull'asse X
-    double arrowYEnd = peakY + 1; // Punto finale della freccia sull'asse Y
-    
-    TArrow* arrow = new TArrow(arrowXEnd, arrowYEnd, peakX, peakY, 0.02, "|>"); // Aggiungi la freccia
-    arrow->SetLineColor(kBlack);
-    arrow->SetLineWidth(2);
-    arrow->Draw();
+    // Riquadro per le statistiche (adatta le coordinate per il tuo layout)
+    TBox* box = new TBox(0.09, 0.63, 0.70, 0.73);
+    box->SetFillColor(0);
+    box->SetLineColor(kBlack);
+    box->SetLineWidth(2);
+    box->Draw("l");
 
-    // Aggiungi il testo "afterpulses"
+    // Scritte statistiche
     TLatex* latex = new TLatex();
+    latex->SetNDC();
     latex->SetTextSize(0.03);
-    latex->SetTextColor(kBlack);
-    latex->DrawLatex(arrowXEnd - 50, arrowYEnd, "afterpulses"); // Posiziona il testo vicino alla freccia
-    c1->Update();
+    addHistogramStats(latex, histogram1, 0.1, 0.70, "StopA");
+    addHistogramStats(latex, histogram2, 0.1, 0.66, "StopB");
 
     // Stampa i risultati
     std::cout << "Numero di start con almeno uno stop1 corrispondente: " << matchedStartCount1 << std::endl;

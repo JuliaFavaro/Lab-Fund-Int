@@ -51,7 +51,7 @@ int main() {
     std::cout << "Valore massimo di #Delta t: " << maxValue << " ns" << std::endl;
 
     // Crea un istogramma con i limiti aggiornati
-    TH1F* histogram = new TH1F("histogram", "#Delta t (Start-Stop)", 100, 300, 20*1000);
+    TH1F* histogram = new TH1F("histogram", "#Delta t (Start-Stop)", 100, 0, 20*1000);
 
     // Riempi l'istogramma con i valori dal TTree
     for (Long64_t i = 0; i < nEntries; ++i) {
@@ -78,7 +78,7 @@ int main() {
     addTimestamp(canvas, timestamp, duration);
 
     // Fit esponenziale
-    TF1* expFit = new TF1("expFit", "[0] * exp(-x / [1]) + [2]", 300, 20*1000);
+    TF1* expFit = new TF1("expFit", "[0] * exp(-x / [1]) + [2]", 0, 20*1000);
     expFit->SetParameters(1000, 2200, 10); // Parametri iniziali: [0]=ampiezza, [1]=decadimento (2200 ns = 2.2 µs), [2]=costante
     expFit->SetParNames("Amplitude", "Decay Time (ns)", "Constant");
 

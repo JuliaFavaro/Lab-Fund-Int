@@ -11,11 +11,19 @@ The output file contains (from left to right):
 - analog id: identifier of the analog reading
 - analag value: digitalized value of the analog signal
 Usage: ./decoder inputFile outputFile
-- File _Calcoli.veloci.ipynb_ : 
+- File _Punti.lavoro.angolo.ipynb_ : 
 Jupyter notebook (Python) that calculates the efficiency of each PMT of our experiment, prints the graphs of efficiency over single counts for each PMT and calculates the solid angle described by our system.
 - File _ToyMonteCarlo.ipynb_ :
 Jupyter notebook (Python) that cointains the MC simulation of predicted START and STOP rate signals from our experiments. It also calculates the intrinsic efficiency of our PMT.
-- File  
+- File _Acquisizione.2404.5giorni.cpp_ :
+File C++/ROOT che individua la differenza nella distribuzione degli intervalli temporali per 2 diverse logiche di STOP.
+- File _Distribuzione.start.stop.cpp_ : 
+File C++/ROOT che individua la differenza nella distribuzione degli intervalli temporali per 3 diverse logiche di STOP. Infine controlla la distribuzione del numero di stop che susseguono ciascuno start per queste 3 diverse logiche.
+- File _Afterpulses.cpp_ :
+File che evidenzia come il picco intorno a 200-250 ns sia un picco spurio più probabilmente legato a qualche tipo di afterpulse che a un problema della logica. In questa distribuzione degli intervalli temporali infatti lo start è rappresentato da un semplice muone che attraversa tutto  il sistema senza mai fermarsi. 
+- File _save.data.to.tree.cpp_ : 
+- File _view.data.from.tree.cpp_ :
+
 
 ### Folder organization:
 
