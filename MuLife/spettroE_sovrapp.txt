@@ -1,0 +1,149 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+#include <TH1F.h>
+#include <TCanvas.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+//Calcola la differenza tra il primo punto crescente tra gli 8 gi ogni trigger e il precedente
+//Applica la correzione di discesa della curva per il punto precedente con exp
+int spettroE_sovrapp() {
+    std::ifstream file("AnalogDivisi_calib_0705.txt");
+    if (!file) {
+        std::cerr << "Errore nell'apertura del file!\n";
+        return 1;
+    }
+
+    std::vector<double> differenze;
+    std::vector<double> Delta1;
+    std::vector<double> Delta2;
+    std::vector<double> Delta;
+    std::vector<int> posizioni;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::vector<double> gruppo;
+        double val;
+
+        while (iss >> val) {
+            gruppo.push_back(val);
+        }
+
+        if (!gruppo.empty()) {
+            for (size_t i = 1; i < gruppo.size(); i++) {
+                if (gruppo[i] > gruppo[i - 1]|| gruppo[i+1]>gruppo[i-1]) { // Trova il primo valore > precedente con anche il successivo >
+                    differenze.push_back(gruppo[i] - gruppo[i - 1]);
+                    Delta1.push_back(differenze.back()+gruppo[i]*(2.2/15.9));
+                    Delta2.push_back(differenze.back()+gruppo[i-1]*(2.2/15.9));
+                    Delta.push_back((Delta1.back()+Delta2.back())/2);
+                    posizioni.push_back(i); // Salva la posizione (indice i)
+                    break; // Esce appena trova il primo valore maggiore
+                }
+            }
+        }
+    }
+
+    file.close();
+
+
+    // Creazione dell'istogramma con ROOT
+   // TCanvas *c1 = new TCanvas("c1", "Istogramma delle differenze dei massimi", 800, 600);
+    TH1F *hist1 = new TH1F("hist","Energia misurata nel bersaglio ;Differenza (MeV);Counts ", 60, 0, 80); // Adatta il range se necessario
+
+    for (double diff : Delta) {
+        hist1->Fill(diff*0.0326);
+    }
+
+   // hist1->Draw();
+   
+
+   TLegend *legend = new TLegend(0.7, 0.7, 0.9, 0.9);
+   legend->SetTextSize(0.03);
+   legend->AddEntry( (TObject*)0, Form("#tau = 15.9 #mus"),"");
+   legend->AddEntry( (TObject*)0, Form("f=0.0326 MeV/mV"),"");
+   legend->AddEntry( hist1, "Dati MIP circa 26h  dal 07/05 al 08/05 ","l");
+
+   // c1->Update();
+   // c1->SaveAs("SpettroE_sovrapp.pdf");   // Salva in formato PDF
+
+    std::ifstream file2("AnalogDivisi_elettrone_unito.txt");
+    if (!file2) {
+        std::cerr << "Errore nell'apertura del file!\n";
+        return 1;
+    }
+
+    std::vector<double> differenze2;
+    std::vector<double> Delta1_2;
+    std::vector<double> Delta2_2;
+    std::vector<double> Delta_2;
+    std::vector<int> posizioni2;
+    std::string line2;
+
+    while (std::getline(file2, line2)) {
+        std::istringstream iss(line2);
+        std::vector<double> gruppo2;
+        double val2;
+
+        while (iss >> val2) {
+            gruppo2.push_back(val2);
+        }
+
+        if (!gruppo2.empty()) {
+            for (size_t i = 1; i < gruppo2.size(); i++) {
+                if (gruppo2[i] > gruppo2[i - 1]|| gruppo2[i+1]>gruppo2[i-1]) { // Trova il primo valore > precedente con anche il successivo >
+                    differenze2.push_back(gruppo2[i] - gruppo2[i - 1]);
+                    Delta1_2.push_back(differenze2.back()+gruppo2[i]*(2.2/15.9));
+                  Delta2_2.push_back(differenze2.back()+gruppo2[i-1]*(2.2/15.9));
+                    Delta_2.push_back((Delta1_2.back()+Delta2_2.back())/2);
+                    posizioni2.push_back(i); // Salva la posizione (indice i)
+                    break; // Esce appena trova il primo valore maggiore
+                }
+            }
+        }
+    }
+
+    file.close();
+
+
+    // Creazione dell'istogramma con ROOT
+    //TCanvas *c1 = new TCanvas("c1", "Istogramma delle differenze dei massimi", 800, 600);
+    TH1F *hist2 = new TH1F("hist", "Spettro energia elettrone ;Differenza (MeV);Counts ", 60, 0, 80); // Adatta il range se necessario
+
+    for (double diff2 : Delta_2) {
+        hist2->Fill(diff2*0.0326);
+    }
+
+  //  hist2->Draw();
+
+
+   hist1->Scale(1.0 / hist1->Integral(),"width");
+   hist2->Scale(1.0 / hist2->Integral(), "width");
+
+   hist1->SetLineColor(kRed);  
+   hist2->SetLineColor(kBlue); 
+   hist1->SetMaximum(1.2 * std::max(hist1->GetMaximum(), hist2->GetMaximum())); 
+   hist1->SetMinimum(0); // Se vuoi partire da zero
+
+  
+   hist1->SetMinimum(1e-6);  // Evita problemi con il log(0)
+   hist1->SetMaximum(1.2 * hist1->GetMaximum());  // Espande leggermente il massimo
+
+
+  TCanvas *c1 = new TCanvas("c1", "Istogrammi Sovrapposti", 800, 600);
+  hist1->Draw("HIST");  
+  hist2->Draw("HIST SAME");  
+  gPad->Update();
+
+
+   legend->AddEntry( hist2, "Dati  elettrone circa 270h  dal 07/05 al 28/05 ","l");
+   legend->AddEntry((TObject*)0, Form("Istogramma eseguito il 29/05/2025"),"");
+   legend->Draw(); 
+
+
+    return 0;
+}
