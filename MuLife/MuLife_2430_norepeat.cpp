@@ -12,13 +12,14 @@
 #include <algorithm>
 #include <TVirtualFFT.h>
 
+
 // Funzione che esegue il fit e disegna tutto sul pad corrente
 TF1* fit_exp(TH1F* histogram){
     // Fit esponenziale (creato qui dentro!)
-    TF1* expFit = new TF1("expFit", "[0] * exp(-x / [1]) + [2]", 300, 20*1000);
+    TF1* expFit = new TF1("expFit", "[0] * exp(-x / [1]) + [2]", 300, 8000);
     expFit->SetParameters(1000, 2200, 10);
     expFit->SetParNames("Amplitude", "Decay Time (ns)", "Constant");
-    histogram->Fit("expFit","RL","",300, 20*1000); 
+    histogram->Fit("expFit","RL","",300, 8000); 
     gStyle->SetOptFit(1111);
     return expFit;
 }
@@ -52,9 +53,35 @@ double fisherInformation(const std::vector<int>& counts, const std::vector<doubl
     return -second_derivative;
 }
 
+// Calcola la semidispersione di tau_fit per binning da 50 a 1000 (passo 20)
+double semidispersioneTauFit(const std::vector<double>& data, int rangeStart, int rangeEnd) {
+    std::vector<double> tauFits;
+    double minValue = 300.0;
+    double maxValue = 20*1000.0;
+
+    for (int nBins = 50; nBins <= 1000; nBins += 20) {
+        TH1D* hist = new TH1D("hist_scan", "", nBins, minValue, maxValue);
+        for (const auto& v : data) hist->Fill(v);
+
+        TF1* fit = new TF1("fit_scan", "[0]*exp(-x/[1])+[2]", rangeStart, rangeEnd);
+        fit->SetParameters(1000, 2200, 10);
+        fit->SetParNames("Amplitude", "Decay Time (ns)", "Constant");
+        hist->Fit(fit, "RLQ0");
+
+        tauFits.push_back(fit->GetParameter(1));
+        delete fit;
+        delete hist;
+    }
+
+    auto [tauMin, tauMax] = std::minmax_element(tauFits.begin(), tauFits.end());
+    double semidisp = (*tauMax - *tauMin) / 2.0;
+    std::cout << "Semidispersione tau_fit (tutti i bin da 50 a 1000, passo 20): " << semidisp << " ns" << std::endl;
+    return semidisp;
+}
+
 // Funzione che effettua il plot tau vs binning
 void plotTauVsBinning(const std::vector<double>& data, int rangeStart, int rangeEnd) {
-    std::vector<int> binCounts = {55, 115, 175, 235, 295, 355,415};
+    std::vector<int> binCounts = {35, 95, 155, 215, 275, 335, 395, 455};
 
     std::vector<double> tauValues, tauErrors;
     double minValue = 300.0;
@@ -100,6 +127,7 @@ void plotTauVsBinning(const std::vector<double>& data, int rangeStart, int range
 
     std::cout << "Errore sistematico su tau_mu- (da binning): " << tau_muminus_sist_err << " μs" << std::endl;
 
+
     // --- DISEGNO ---
     TCanvas* cTau = new TCanvas("cTau", "Tau vs Binning", 700, 600);
     TGraphErrors* grTau = new TGraphErrors(binCounts.size());
@@ -117,35 +145,9 @@ void plotTauVsBinning(const std::vector<double>& data, int rangeStart, int range
     cTau->Update();
 }
 
-// Calcola la semidispersione di tau_fit per binning da 50 a 1000 (passo 20)
-double semidispersioneTauFit(const std::vector<double>& data, int rangeStart, int rangeEnd) {
-    std::vector<double> tauFits;
-    double minValue = 300.0;
-    double maxValue = 20*1000.0;
-
-    for (int nBins = 50; nBins <= 1000; nBins += 20) {
-        TH1D* hist = new TH1D("hist_scan", "", nBins, minValue, maxValue);
-        for (const auto& v : data) hist->Fill(v);
-
-        TF1* fit = new TF1("fit_scan", "[0]*exp(-x/[1])+[2]", rangeStart, rangeEnd);
-        fit->SetParameters(1000, 2200, 10);
-        fit->SetParNames("Amplitude", "Decay Time (ns)", "Constant");
-        hist->Fit(fit, "RLQ0");
-
-        tauFits.push_back(fit->GetParameter(1));
-        delete fit;
-        delete hist;
-    }
-
-    auto [tauMin, tauMax] = std::minmax_element(tauFits.begin(), tauFits.end());
-    double semidisp = (*tauMax - *tauMin) / 2.0;
-    std::cout << "Semidispersione tau_fit (tutti i bin da 50 a 1000, passo 20): " << semidisp << " ns" << std::endl;
-    return semidisp;
-}
-
 int sceltabinning() {
     // Apri il file ROOT
-    TFile* inputFile = TFile::Open("time_differences_0607.root", "READ");
+    TFile* inputFile = TFile::Open("time_differences.root", "READ");
     if (!inputFile || inputFile->IsZombie()) {
         std::cerr << "Errore: impossibile aprire il file ROOT!" << std::endl;
         return 1;
@@ -225,8 +227,9 @@ int sceltabinning() {
 
     std::cout << "Numero di bin ottimale (massimizza informazione di Fisher): " << bestK << std::endl;
 
-    plotTauVsBinning(data, 300, 20*1000);
-    //double semiDisp = semidispersioneTauFit(data, 300, 20000);
+    plotTauVsBinning(data, 300, 8000);
+    
+    double semiDisp = semidispersioneTauFit(data, 300, 20000);
     inputFile->Close();
     delete inputFile;
     return 0;
@@ -274,7 +277,7 @@ TGraphErrors* computeNormalizedResiduals(TH1F* histo, TF1* fit, double rangeMin,
 
 int main() {
     // Apri il file ROOT
-    TFile* inputFile = new TFile("time_differences_0607.root", "READ");
+    TFile* inputFile = new TFile("time_differences.root", "READ");
     if (!inputFile || inputFile->IsZombie()) {
         std::cerr << "Errore: impossibile aprire il file ROOT!" << std::endl;
         return 1;
@@ -297,7 +300,7 @@ int main() {
     std::cout << "Numero di entries nel TTree: " << nEntries << std::endl;
 
     // Istogramma
-    TH1F* histogram = new TH1F("histogram", "#Delta t (Start-StopC)", 88, 300, 20*1000);
+    TH1F* histogram = new TH1F("histogram", "#Delta t (Start-StopB)", 94, 300, 8000);
     for (Long64_t i = 0; i < nEntries; ++i) {
         tree->GetEntry(i);
         histogram->Fill(timeDifference);
@@ -315,8 +318,8 @@ int main() {
     std::cout << "Tau muone negativo: " << tau_muminus << " ± " << err_muminus << " μs" << std::endl;
 
     
-    std::string timestamp = "06.05.2025 14:45 Bin:88";
-    std::string duration = "Durata: 40.5 ore";
+    std::string timestamp = "24.04.2025 18:30 Bin:94";
+    std::string duration = "Durata: 266.5 ore";
 
     // Creazione del canvas con due subplot
     TCanvas* canvas1 = new TCanvas("canvas1", "Fit con Residui", 800, 600);
@@ -325,12 +328,12 @@ int main() {
     // --- Primo pad: fit e istogramma ---
 
     canvas1->cd(1);
-    histogram->SetLineColor(kGreen);
+    histogram->SetLineColor(kRed);
     histogram->SetYTitle("Conteggi");
     histogram->SetXTitle("#Delta t (ns)");
 
     histogram->Draw();
-    expFit->SetLineColor(kGreen-6);
+    
     expFit->Draw("SAME");
     addTimestamp(timestamp, duration);
 
@@ -338,14 +341,14 @@ int main() {
     canvas1->cd(2);
 
     // Recupera il fit dalla lista delle funzioni dell'istogramma
-    TGraphErrors* residuals = computeNormalizedResiduals(histogram, expFit, 300, 20*1000);
+    TGraphErrors* residuals = computeNormalizedResiduals(histogram, expFit, 300, 8000);
     residuals->SetMinimum(-5);
     residuals->SetMaximum(5);
     residuals->SetTitle("");
     residuals->Draw("AP");
     residuals->GetYaxis()->SetTitle("Residui norm.");
     residuals->GetXaxis()->SetTitle("#Delta t (ns)");
-    TLine* zeroLine = new TLine(300, 0, 20*1000, 0);
+    TLine* zeroLine = new TLine(300, 0, 8000, 0);
     zeroLine->SetLineStyle(2);
     zeroLine->SetLineColor(kGray+2);
     zeroLine->Draw("SAME");
@@ -353,11 +356,12 @@ int main() {
     canvas1->Update();
     canvas1->Draw();
     gStyle->SetOptFit(1111);
-    canvas1->SaveAs("Risultati/Vita media/Fit_0607_bin100.jpg");
-    canvas1->SaveAs("Risultati/Vita media/Fit_0607_bin100.pdf");
+    canvas1->SaveAs("Risultati/Vita media/Fit_2430_corretto.jpg");
+    canvas1->SaveAs("Risultati/Vita media/Fit_2430_corretto.pdf");
 
     std::cout << "Premi invio per uscire..." << std::endl;
     std::cin.get();
+
 
     return 0;
 }

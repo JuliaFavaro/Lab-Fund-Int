@@ -69,36 +69,37 @@ void calculateTimeDifferencesAndSaveToTree(
     tree->Branch("timeDifference", &timeDifference, "timeDifference/D");
 
     size_t stopIndex = 0;
-    int count = 0; // Contatore per debug
+    int count = 0; // Debug
 
-    // Itera sugli START consecutivi
-    for (size_t i = 0; i < startTimes.size() - 1; ++i) {
+    // Per ogni START, cerca SOLO il primo STOP successivo
+    for (size_t i = 0; i < startTimes.size(); ++i) {
         double currentStart = startTimes[i];
-        double nextStart = startTimes[i + 1];
 
-        // Avanza il puntatore degli STOP al primo con timestamp maggiore del currentStart
-        while (stopIndex < stopTimes.size() && stopTimes[stopIndex] < currentStart) {
+        // Avanza stopIndex finché trovi uno stop > currentStart
+        while (stopIndex < stopTimes.size() && stopTimes[stopIndex] <= currentStart) {
             ++stopIndex;
         }
 
-        // Calcola le differenze di tempo per tutti gli STOP compresi tra currentStart e nextStart
-        while (stopIndex < stopTimes.size() && stopTimes[stopIndex] < nextStart) {
+        // Se esiste uno stop dopo currentStart e prima del prossimo start
+        if (stopIndex < stopTimes.size()) {
+            // (Opzionale: se vuoi solo stop tra currentStart e nextStart)
+            if (i+1 < startTimes.size() && stopTimes[stopIndex] >= startTimes[i+1]) continue;
+
             timeDifference = stopTimes[stopIndex] - currentStart;
             if (timeDifference > 300e-9) {
                 tree->Fill();
                 ++count;
             }
-            ++stopIndex;
+            ++stopIndex; // Non riutilizzare questo stop per altri start
         }
     }
-    std::cout << "Numero totale di differenze salvate: " << count << std::endl; // Debug finale
-
+    std::cout << "Numero totale di differenze salvate: " << count << std::endl;
 }
 
 int main() {
     // File di input
-    const std::string file0424 = "Dati/output_20250506-mulife.txt";
-    const std::string file0430 ="Dati/output_20250507-mumass.txt";
+    const std::string file0424 = "Dati/output_20250424-mulife.txt";
+    const std::string file0430 ="Dati/output_20250430-mulife.txt";
 
     // Vettori per i dati di ciascun file
     std::vector<double> startTimes0424, stop1Times0424;
