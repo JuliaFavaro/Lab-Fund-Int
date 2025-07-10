@@ -1,0 +1,66 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+//Divide il file di lettura degli analogici in gruppi di 8 campionamenti per ogni trigger
+int analog_division_e() {
+    std::ifstream file("output_elettrone_1905_2105.txt"); // Sostituisci con il nome corretto del tuo file
+    if (!file) {
+        std::cerr << "Errore nell'apertura del file!\n";
+        return 1;
+    }
+
+    std::vector<std::vector<double>> gruppi; // Vettore di vettori per i gruppi
+    std::vector<double> temp_group; // Gruppo temporaneo
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        double temp;
+        int index = 0;
+        double val1, val2, val3;
+        
+        while (iss >> temp) {
+            if (index == 16) val1 = temp; // Terzultima colonna
+            if (index == 17) val2 = temp; // Penultima colonna
+            if (index == 18) val3 = temp; // Ultima colonna
+            index++;
+        }
+
+        if (val1 == 1 && val2 >= 0 && val2 <= 7) {
+            if (val2 == 0) {
+                if (!temp_group.empty()) {
+                    gruppi.push_back(temp_group);
+                    temp_group.clear();
+                }
+            }
+            temp_group.push_back(val3);
+        }
+    }
+
+    if (!temp_group.empty()) {
+        gruppi.push_back(temp_group);
+    }
+
+    file.close();
+
+    // Salvataggio dei gruppi in un file di output
+    std::ofstream outputFile("AnalogDivisi_elettrone_1905_2105.txt");
+    if (!outputFile) {
+        std::cerr << "Errore nell'apertura del file di output!\n";
+        return 1;
+    }
+
+    for (size_t i = 0; i < gruppi.size(); i++) {
+      //  outputFile << "Gruppo " << i + 1 << ": ";
+        for (double v : gruppi[i]) {
+            outputFile << v << " ";
+        }
+        outputFile << "\n";
+    }
+
+    outputFile.close();
+    std::cout << "Dati salvati in AnalogDivisi_elettrone_unito.txt\n";
+
+    return 0;
+}
